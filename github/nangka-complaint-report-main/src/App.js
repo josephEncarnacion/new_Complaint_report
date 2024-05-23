@@ -7,6 +7,7 @@ import Login from  './pages/login';
 import Register from './pages/register';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminPage from './pages/AdminPage';
 
 const App = () => {
   useEffect(() => {
@@ -41,6 +42,7 @@ const App = () => {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/admin" element={<AdminPage />} />
         <Route
           path="*"
           element={

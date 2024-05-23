@@ -68,8 +68,45 @@ async function insertUser(user) {
         throw error;
     }
 }
+const getPaginatedComplaints = async (page, pageSize) => {
+    try {
+        let pool = await sql.connect(config);
+        const query = `
+            SELECT *
+            FROM Complaint_tbl;
+        `;
+        const result = await pool.request()
+            .input('offset', sql.Int, (page - 1) * pageSize)
+            .input('pageSize', sql.Int, pageSize)
+            .query(query);
+        return result.recordset;
+    } catch (error) {
+        console.error('Error retrieving paginated complaints:', error);
+        throw error;
+    }
+};
+
+const getPaginatedEmergencies = async (page, pageSize) => {
+    try {
+        let pool = await sql.connect(config);
+        const query = `
+            SELECT *
+            FROM Emergencyy_tbl;
+        `;
+        const result = await pool.request()
+            .input('offset', sql.Int, (page - 1) * pageSize)
+            .input('pageSize', sql.Int, pageSize)
+            .query(query);
+        return result.recordset;
+    } catch (error) {
+        console.error('Error retrieving paginated emergencies:', error);
+        throw error;
+    }
+};
 module.exports = {
     insertEmergencyReport,
+    getPaginatedEmergencies,
+    getPaginatedComplaints,
     insertComplaint,
     getUserByUsername,
     insertUser,

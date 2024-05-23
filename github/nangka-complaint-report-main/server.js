@@ -1,7 +1,7 @@
 const express = require('express');
 const dbOperation = require('./dbfiles/dbOperation');
 const cors = require('cors');
-
+const { getPaginatedComplaints, getPaginatedEmergencies } = require('./dbfiles/dbOperation');
 const API_PORT = process.env.PORT || 5000;
 const app = express();
 
@@ -11,6 +11,25 @@ app.use(cors());
 
 app.get('/api', (req, res) => {
   res.json({ message: 'API endpoint is working' });
+});
+app.get('/complaints', async (req, res) => {
+  const { page = 1, pageSize = 10 } = req.query;
+  try {
+      const complaints = await getPaginatedComplaints(parseInt(page), parseInt(pageSize));
+      res.json(complaints);
+  } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch complaints' });
+  }
+});
+
+app.get('/emergencies', async (req, res) => {
+  const { page = 1, pageSize = 10 } = req.query;
+  try {
+      const emergencies = await getPaginatedEmergencies(parseInt(page), parseInt(pageSize));
+      res.json(emergencies);
+  } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch emergencies' });
+  }
 });
 
 // Route to handle form submission
