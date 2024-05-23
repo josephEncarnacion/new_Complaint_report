@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination, Box, Typography
 } from '@mui/material';
-
+import CustomPaginationActions from '../components/CustomPaginationActions'
 const AdminPage = () => {
   const [complaints, setComplaints] = useState([]);
   const [emergencies, setEmergencies] = useState([]);
@@ -50,13 +50,13 @@ const AdminPage = () => {
   };
 
   return (
-    <Box>
+    <Box sx={{ padding: 4 }}>
       <Typography variant="h4" align="center" gutterBottom>
         Admin Dashboard
       </Typography>
       <Box mt={4}>
         <Typography variant="h6">Complaints</Typography>
-        <TableContainer component={Paper}>
+        <TableContainer component={Paper} sx={{ mb: 4 }}>
           <Table>
             <TableHead>
               <TableRow>
@@ -77,16 +77,21 @@ const AdminPage = () => {
               ))}
             </TableBody>
           </Table>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: 2 }}>
+            <TablePagination
+              rowsPerPageOptions={[10, 25, 50]}
+              component="div"
+              count={-1}  // Server-side pagination, so -1 to hide the total count
+              rowsPerPage={complaintRowsPerPage}
+              page={complaintPage}
+              onPageChange={handleComplaintPageChange}
+              onRowsPerPageChange={handleComplaintRowsPerPageChange}
+              ActionsComponent={(subProps) => (
+                <CustomPaginationActions {...subProps} count={complaints.length} />
+              )}
+            />
+          </Box>
         </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 50]}
-          component="div"
-          count={-1}  // Server-side pagination, so -1 to hide the total count
-          rowsPerPage={complaintRowsPerPage}
-          page={complaintPage}
-          onPageChange={handleComplaintPageChange}
-          onRowsPerPageChange={handleComplaintRowsPerPageChange}
-        />
       </Box>
       <Box mt={4}>
         <Typography variant="h6">Emergencies</Typography>
@@ -111,16 +116,21 @@ const AdminPage = () => {
               ))}
             </TableBody>
           </Table>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: 2 }}>
+            <TablePagination
+              rowsPerPageOptions={[10, 25, 50]}
+              component="div"
+              count={-1}  // Server-side pagination, so -1 to hide the total count
+              rowsPerPage={emergencyRowsPerPage}
+              page={emergencyPage}
+              onPageChange={handleEmergencyPageChange}
+              onRowsPerPageChange={handleEmergencyRowsPerPageChange}
+              ActionsComponent={(subProps) => (
+                <CustomPaginationActions {...subProps} count={emergencies.length} />
+              )}
+            />
+          </Box>
         </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 50]}
-          component="div"
-          count={-1}  // Server-side pagination, so -1 to hide the total count
-          rowsPerPage={emergencyRowsPerPage}
-          page={emergencyPage}
-          onPageChange={handleEmergencyPageChange}
-          onRowsPerPageChange={handleEmergencyRowsPerPageChange}
-        />
       </Box>
     </Box>
   );
