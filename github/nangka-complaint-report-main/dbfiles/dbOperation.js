@@ -24,7 +24,7 @@ const insertEmergencyReport = async (name, address, emergencyType, emergencyText
     try {
         let pool = await sql.connect(config);
         const query = `
-            INSERT INTO Emergencyy_tbl (Name, Address, EmergencyType, EmergencyText)
+            INSERT INTO Emergency_tbl (Name, Address, EmergencyType, EmergencyText)
             VALUES (@name, @address, @emergencyType, @emergencyText)
         `;
         await pool.request()
@@ -91,7 +91,7 @@ const getPaginatedEmergencies = async (page, pageSize) => {
         let pool = await sql.connect(config);
         const query = `
             SELECT *
-            FROM Emergencyy_tbl;
+            FROM Emergency_tbl;
         `;
         const result = await pool.request()
             .input('offset', sql.Int, (page - 1) * pageSize)
