@@ -3,6 +3,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination, Box, Typography
 } from '@mui/material';
 import CustomPaginationActions from '../components/CustomPaginationActions'
+
 const AdminPage = () => {
   const [complaints, setComplaints] = useState([]);
   const [emergencies, setEmergencies] = useState([]);

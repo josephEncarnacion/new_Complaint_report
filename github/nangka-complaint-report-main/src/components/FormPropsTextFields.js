@@ -34,14 +34,17 @@ const ComplaintForm = () => {
   };
 
   const handleSubmit = async () => {
+    try {
+      const ipResponse = await fetch('/geoip');
+    const ipData = await ipResponse.json();
     const formData = {
         name,
         address,
         complaintType,
         complaintText,
-    };
+        location: ipData.loc // Add location from IP geolocation data
 
-    try {
+    };
         const response = await fetch('/submitComplaint', {
             method: 'POST',
             headers: {

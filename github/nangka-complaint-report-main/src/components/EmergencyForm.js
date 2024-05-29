@@ -33,14 +33,16 @@ const EmergencyForm = () => {
   };
 
   const handleSubmit = async () => {
-    const formData = {
+    try {
+      const ipResponse = await fetch('/geoip');
+      const ipData = await ipResponse.json();
+      const formData = {  
         name,
         address,
         emergencyType,
         emergencyText,
+        location: ipData.loc // Add location from IP geolocation data
     };
-
-    try {
         const response = await fetch('/submitEmergencyReport', {
             method: 'POST',
             headers: {
