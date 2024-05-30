@@ -5,7 +5,7 @@ const { getPaginatedComplaints, getPaginatedEmergencies } = require('./dbfiles/d
 const API_PORT = process.env.PORT || 5000;
 const app = express();
 const axios = require('axios');
-const IPINFO_TOKEN = '33ca1ce1430707'; // Replace with your actual token
+const IPINFO_TOKEN = '33ca1ce1430707'; // actual token
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // Use extended to parse nested objects
 app.use(cors());
