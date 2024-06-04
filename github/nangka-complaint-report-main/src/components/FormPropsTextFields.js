@@ -7,6 +7,8 @@ import Select from '@mui/material/Select';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
 
 // Import the InputFileUpload component here
 import InputFileUpload from './InputFileUpload';
@@ -16,6 +18,9 @@ const ComplaintForm = () => {
   const [address, setAddress] = useState('');
   const [complaintType, setComplaintType] = useState('');
   const [complaintText, setComplaintText] = useState('');
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
   const handleNameChange = (event) => {
     setName(event.target.value);
@@ -36,31 +41,42 @@ const ComplaintForm = () => {
   const handleSubmit = async () => {
     try {
       const ipResponse = await fetch('/geoip');
-    const ipData = await ipResponse.json();
-    const formData = {
+      const ipData = await ipResponse.json();
+      const formData = {
         name,
         address,
         complaintType,
         complaintText,
         location: ipData.loc // Add location from IP geolocation data
+      };
+      const response = await fetch('/submitComplaint', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
 
-    };
-        const response = await fetch('/submitComplaint', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData),
-        });
+      const data = await response.json();
+      console.log('Response from server:', data);
 
-        const data = await response.json();
-        console.log('Response from server:', data);
-        // Optionally, handle success or failure based on the response
+      // Show success message
+      setSnackbarMessage('Complaint submitted successfully!');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
     } catch (error) {
-        console.error('Error submitting complaint:', error);
-        // Handle error
+      console.error('Error submitting complaint:', error);
+
+      // Show error message
+      setSnackbarMessage('Failed to submit complaint.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
-};
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
 
   return (
     <Box
@@ -82,9 +98,9 @@ const ComplaintForm = () => {
           textAlign: 'center',
         }}
       >
-      <Typography align="center" variant="h5" gutterBottom>
+        <Typography align="center" variant="h5" gutterBottom>
           Complaint Form
-      </Typography>
+        </Typography>
         <TextField
           label="Name"
           variant="outlined"
@@ -113,6 +129,8 @@ const ComplaintForm = () => {
             <MenuItem value="Noise Complaint">Noise Complaint</MenuItem>
             <MenuItem value="Garbage Collection Issue">Garbage Collection Issue</MenuItem>
             <MenuItem value="Street Light Outage">Street Light Outage</MenuItem>
+            <MenuItem value="Pet Wastes">Pet Wastes</MenuItem>
+            <MenuItem value="Illegal Parking">Illegal Parking</MenuItem>
             <MenuItem value="Traffic Violation">Traffic Violation</MenuItem>
             {/* Add more complaint types as needed */}
           </Select>
@@ -135,6 +153,16 @@ const ComplaintForm = () => {
           </Button>
         </Box>
       </Box>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

@@ -8,12 +8,17 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
 import InputFileUpload from './InputFileUpload';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
 
 const EmergencyForm = () => {
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [emergencyType, setEmergencyType] = useState('');
   const [emergencyText, setEmergencyText] = useState('');
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
   const handleNameChange = (event) => {
     setName(event.target.value);
@@ -29,7 +34,6 @@ const EmergencyForm = () => {
 
   const handleEmergencyChange = (event) => { 
     setEmergencyText(event.target.value);  
-
   };
 
   const handleSubmit = async () => {
@@ -53,12 +57,24 @@ const EmergencyForm = () => {
 
         const data = await response.json();
         console.log('Response from server:', data);
-        // Optionally, handle success or failure based on the response
+
+        // Show success message
+        setSnackbarMessage('Emergency report submitted successfully!');
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
     } catch (error) {
         console.error('Error submitting emergency report:', error);
-        // Handle error
+
+        // Show error message
+        setSnackbarMessage('Failed to submit emergency report.');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
     }
-};
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
 
   return (
     <Box
@@ -133,6 +149,16 @@ const EmergencyForm = () => {
           </Button>
         </Box>
       </Box>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
