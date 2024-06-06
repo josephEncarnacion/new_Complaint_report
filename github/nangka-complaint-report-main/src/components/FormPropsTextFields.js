@@ -10,8 +10,6 @@ import Typography from '@mui/material/Typography';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import axios from 'axios';
-// Import the InputFileUpload component here
-import InputFileUpload from './InputFileUpload';
 
 const ComplaintForm = () => {
   const [name, setName] = useState('');
@@ -148,15 +146,18 @@ const ComplaintForm = () => {
         <TextField
           label="Address"
           variant="outlined"
+          multiline
+          rows={3}    
           fullWidth
           value={address}
           onChange={handleAddressChange}
           margin="normal"
         />
-         <Box marginTop={2}>
+         <Box marginTop={2} marginLeft={42}>
           <Button variant="contained" color="primary" onClick={handleGetLocation}>
             Get Location
-          </Button>          {locationError}
+          </Button>
+          {locationError}
         </Box>
         <FormControl fullWidth margin="normal" variant="outlined">
           <InputLabel id="complaint-type-label">Complaint Type</InputLabel>
@@ -186,8 +187,6 @@ const ComplaintForm = () => {
           onChange={handleComplaintChange}
           margin="normal"
         />
-        {/* Add the InputFileUpload component here */}
-        <InputFileUpload />
         <Box marginTop={2}>
           <Button variant="contained" color="primary" onClick={handleSubmit}>
             Submit Complaint

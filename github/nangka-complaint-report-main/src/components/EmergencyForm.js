@@ -9,7 +9,6 @@ import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
-import InputFileUpload from './InputFileUpload';
 import axios from 'axios';
 
 const EmergencyForm = () => {
@@ -147,12 +146,14 @@ const EmergencyForm = () => {
         <TextField
           label="Address"
           variant="outlined"
+          multiline
+          rows={3}
           fullWidth
           value={address}
           onChange={handleAddressChange}
           margin="normal"
         />
-         <Box marginTop={2}>
+        <Box marginTop={2} marginLeft={42}>
           <Button variant="contained" color="primary" onClick={handleGetLocation}>
             Get Location
           </Button>
@@ -162,6 +163,7 @@ const EmergencyForm = () => {
             </Typography>
           )}
         </Box>
+         
         <FormControl fullWidth margin="normal" variant="outlined">
           <InputLabel id="complaint-type-label">Emergency Type</InputLabel>
           <Select
@@ -188,7 +190,6 @@ const EmergencyForm = () => {
           onChange={handleEmergencyChange}
           margin="normal"
         />
-        <InputFileUpload />
        
         <Box marginTop={2}>
           <Button variant="contained" color="primary" onClick={handleSubmit}>

@@ -1,6 +1,7 @@
 // src/pages/Register.js
 import React from 'react';
-import { Grid, TextField, Button, Typography } from '@mui/material';
+import { Grid, TextField, Button, Typography, Paper, Box } from '@mui/material';
+import { Link } from 'react-router-dom';
 
 function Register() {
   const [username, setUsername] = React.useState('');
@@ -27,39 +28,53 @@ function Register() {
   };
 
   return (
-    <Grid container spacing={2} justify="center">
-      <Grid item xs={12}>
-        <Typography variant="h4">Register</Typography>
-      </Grid>
-      <Grid item xs={12}>
-        <TextField
-          label="Username"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-          fullWidth
-        />
-      </Grid>
-      <Grid item xs={12}>
-        <TextField
-          label="Email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          fullWidth
-        />
-      </Grid>
-      <Grid item xs={12}>
-        <TextField
-          label="Password"
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          fullWidth
-        />
-      </Grid>
-      <Grid item xs={12}>
-        <Button variant="contained" color="primary" onClick={handleSubmit}>
-          Register
-        </Button>
+    <Grid container justifyContent="center" alignItems="center" style={{ minHeight: '100vh' }}>
+      <Grid item xs={12} sm={8} md={4}>
+        <Paper elevation={6} style={{ padding: '2em' }}>
+          <Box textAlign="center" marginBottom="1em">
+            <Typography variant="h4">Register</Typography>
+          </Box>
+          <form onSubmit={handleSubmit}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  label="Username"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Password"
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Button variant="contained" color="primary" type="submit" fullWidth>
+                  Register
+                </Button>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="body2" align="center">
+                  Already have an account?{' '}
+                  <Link to="/login">Login here</Link>
+                </Typography>
+              </Grid>
+            </Grid>
+          </form>
+        </Paper>
       </Grid>
     </Grid>
   );
