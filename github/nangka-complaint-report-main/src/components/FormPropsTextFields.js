@@ -9,7 +9,7 @@ import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
-
+import axios from 'axios';
 // Import the InputFileUpload component here
 import InputFileUpload from './InputFileUpload';
 
@@ -21,6 +21,8 @@ const ComplaintForm = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [location, setLocation] = useState({ lat: null, lng: null });
+  const [locationError, setLocationError] = useState(null);
 
   const handleNameChange = (event) => {
     setName(event.target.value);
@@ -37,17 +39,51 @@ const ComplaintForm = () => {
   const handleComplaintChange = (event) => {
     setComplaintText(event.target.value);
   };
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setLocation({ lat: latitude, lng: longitude });
+        setLocationError(null);
+
+        console.log(`Obtained coordinates: Latitude = ${latitude}, Longitude = ${longitude}`);
+
+        const apiKey = 'pk.0fa1d8fd6faab9f422d6c5e37c514ce1';
+        const url = `https://us1.locationiq.com/v1/reverse.php?key=${apiKey}&lat=${latitude}&lon=${longitude}&format=json`;
+
+        try {
+          const response = await axios.get(url);
+          const data = response.data;
+          console.log('Response from LocationIQ API:', data);
+          if (data && data.display_name) {
+            setAddress(data.display_name);
+          } else {
+            setAddress('Address not found');
+          }
+        } catch (error) {
+          console.error('Error fetching address:', error);
+          setAddress('Error fetching address');
+        }
+      },
+      () => {
+        setLocationError('Unable to retrieve your location');
+      }
+    );
+  };
 
   const handleSubmit = async () => {
     try {
-      const ipResponse = await fetch('/geoip');
-      const ipData = await ipResponse.json();
       const formData = {
         name,
         address,
         complaintType,
         complaintText,
-        location: ipData.loc // Add location from IP geolocation data
+        location,
       };
       const response = await fetch('/submitComplaint', {
         method: 'POST',
@@ -117,6 +153,11 @@ const ComplaintForm = () => {
           onChange={handleAddressChange}
           margin="normal"
         />
+         <Box marginTop={2}>
+          <Button variant="contained" color="primary" onClick={handleGetLocation}>
+            Get Location
+          </Button>          {locationError}
+        </Box>
         <FormControl fullWidth margin="normal" variant="outlined">
           <InputLabel id="complaint-type-label">Complaint Type</InputLabel>
           <Select

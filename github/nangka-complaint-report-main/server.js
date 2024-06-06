@@ -4,22 +4,11 @@ const cors = require('cors');
 const { getPaginatedComplaints, getPaginatedEmergencies } = require('./dbfiles/dbOperation');
 const API_PORT = process.env.PORT || 5000;
 const app = express();
-const axios = require('axios');
-const IPINFO_TOKEN = '33ca1ce1430707'; // actual token
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // Use extended to parse nested objects
 app.use(cors());
 
-app.get('/geoip', async (req, res) => {
-  try {
-    const response = await axios.get(`https://ipinfo.io?token=${IPINFO_TOKEN}`);
-    const data = response.data;
-    res.json(data);
-  } catch (error) {
-    console.error('Error fetching geolocation data:', error);
-    res.status(500).json({ error: 'Failed to fetch geolocation data' });
-  }
-});
+
 
 
 app.get('/api', (req, res) => {
@@ -48,24 +37,25 @@ app.get('/emergencies', async (req, res) => {
 // Route to handle form submission
 app.post('/submitComplaint', async (req, res) => {
     const { name, address, complaintType, complaintText,location } = req.body;
+    const { lat, lng } = location; // Extract latitude and longitude from location object
     try {
-        // Insert form data into the database
-        await dbOperation.insertComplaint(name, address, complaintType, complaintText, location);
-        res.status(200).json({ success: true, message: 'Complaint submitted successfully.' });
-    } catch (error) {
-        console.error('Error submitting complaint:', error);
-        res.status(500).json({ success: false, message: 'Failed to submit complaint.' });
-    }
+      await dbOperation.insertComplaint(name, address, complaintType, complaintText , lat, lng);
+      res.status(200).json({ success: true, message: 'Emergency report submitted successfully.' });
+  } catch (error) {
+      console.error('Error submitting emergency report:', error);
+      res.status(500).json({ success: false, message: 'Failed to submit emergency report.' });
+  }
 });
 
 app.post('/submitEmergencyReport', async (req, res) => {
   const { name, address, emergencyType, emergencyText, location } = req.body;
+  const { lat, lng } = location; // Extract latitude and longitude from location object
   try {
-    await dbOperation.insertEmergencyReport(name, address, emergencyType, emergencyText, location);
-    res.status(200).json({ success: true, message: 'Emergency report submitted successfully.' });
+      await dbOperation.insertEmergencyReport(name, address, emergencyType, emergencyText, lat, lng);
+      res.status(200).json({ success: true, message: 'Emergency report submitted successfully.' });
   } catch (error) {
-    console.error('Error submitting emergency report:', error);
-    res.status(500).json({ success: false, message: 'Failed to submit emergency report.' });
+      console.error('Error submitting emergency report:', error);
+      res.status(500).json({ success: false, message: 'Failed to submit emergency report.' });
   }
 });
 
@@ -120,5 +110,5 @@ app.get('*', (req, res) => {
     // Verify the registration data and create a new user
     res.json({ success: true });
   });
-
+  
 app.listen(API_PORT, () => console.log(`Server is running on port ${API_PORT}`));

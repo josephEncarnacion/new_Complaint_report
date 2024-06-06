@@ -3,17 +3,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination, Box, Typography
 } from '@mui/material';
 import CustomPaginationActions from '../components/CustomPaginationActions'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-});
-
+import MapComponent from '../components/MapComponent';
 
 const AdminPage = () => {
   const [complaints, setComplaints] = useState([]);
@@ -22,6 +12,7 @@ const AdminPage = () => {
   const [complaintRowsPerPage, setComplaintRowsPerPage] = useState(10);
   const [emergencyPage, setEmergencyPage] = useState(0);
   const [emergencyRowsPerPage, setEmergencyRowsPerPage] = useState(10);
+  
   
   useEffect(() => {
     fetchComplaints(complaintPage, complaintRowsPerPage);
@@ -66,37 +57,7 @@ const AdminPage = () => {
       <Typography variant="h4" align="center" gutterBottom>
         Admin Dashboard
       </Typography>
-      <Typography variant="h6">Map</Typography>
-      <MapContainer center={[14.6507, 121.1029]} zoom={14} style={{ height: '400px', width: '100%' }}>
-      <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          />
-          {complaints.map((complaint) => {
-            const [lat, lon] = complaint.Location.split(','); // Assuming Location is stored as 'lat,lon'
-            return (
-              <Marker key={complaint.ComplaintID} position={[lat, lon]}>
-                <Popup>
-                  <strong>{complaint.Name}</strong><br />
-                  {complaint.ComplaintType}<br />
-                  {complaint.ComplaintText}
-                </Popup>
-              </Marker>
-            );
-          })}
-          {emergencies.map((emergency) => {
-            const [lat, lon] = emergency.Location.split(','); // Assuming Location is stored as 'lat,lon'
-            return (
-              <Marker key={emergency.EmergencyID} position={[lat, lon]}>
-                <Popup>
-                  <strong>{emergency.Name}</strong><br />
-                  {emergency.EmergencyType}<br />
-                  {emergency.EmergencyText}
-                </Popup>
-              </Marker>
-            );
-          })}
-        </MapContainer>
+      <MapComponent/>
       <Box mt={4}>
         <Typography variant="h6">Complaints</Typography>
         <TableContainer component={Paper} sx={{ mb: 4 }}>

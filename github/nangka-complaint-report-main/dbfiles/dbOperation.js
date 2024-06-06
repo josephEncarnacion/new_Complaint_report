@@ -1,19 +1,21 @@
 const config = require('./dbConfig');
 const sql = require('mssql');
 
-const insertComplaint = async (name, address, complaintType, complaintText, location) => {
+
+const insertComplaint = async (name, address, complaintType, complaintText, latitude, longitude) => {
     try {
         let pool = await sql.connect(config);
         const query = `
-            INSERT INTO Complaint_tbl (Name, Address, ComplaintType, ComplaintText, Location)
-            VALUES (@name, @address, @complaintType, @complaintText, @location)
+            INSERT INTO Complaint_tbl (Name, Address, ComplaintType, ComplaintText, Latitude, Longitude)
+            VALUES (@name, @address, @complaintType, @complaintText, @latitude, @longitude)
         `;
         await pool.request()
             .input('name', sql.VarChar, name)
             .input('address', sql.VarChar, address)
             .input('complaintType', sql.VarChar, complaintType)
             .input('complaintText', sql.VarChar, complaintText)
-            .input('location', sql.VarChar, location) // Add location input
+            .input('latitude', sql.Float, latitude)
+            .input('longitude', sql.Float, longitude)
             .query(query);
         console.log('Complaint inserted successfully.');
     } catch (error) {
@@ -21,26 +23,27 @@ const insertComplaint = async (name, address, complaintType, complaintText, loca
         throw error;
     }
 };
-const insertEmergencyReport = async (name, address, emergencyType, emergencyText, location) => {
+const insertEmergencyReport = async (name, address, emergencyType, emergencyText, latitude, longitude) => {
     try {
-      let pool = await sql.connect(config);
-      const query = `
-        INSERT INTO Emergency_tbl (Name, Address, EmergencyType, EmergencyText, Location)
-        VALUES (@name, @address, @emergencyType, @emergencyText, @location )
-      `;
-      await pool.request()
-        .input('name', sql.VarChar, name)
-        .input('address', sql.VarChar, address)
-        .input('emergencyType', sql.VarChar, emergencyType)
-        .input('emergencyText', sql.VarChar, emergencyText)
-        .input('location', sql.VarChar, location) // Add location input
-        .query(query);
-      console.log('Emergency report inserted successfully.');
+        let pool = await sql.connect(config);
+        const query = `
+            INSERT INTO Emergency_tbl (Name, Address, EmergencyType, EmergencyText, Latitude, Longitude)
+            VALUES (@name, @address, @emergencyType, @emergencyText, @latitude, @longitude)
+        `;
+        await pool.request()
+            .input('name', sql.VarChar, name)
+            .input('address', sql.VarChar, address)
+            .input('emergencyType', sql.VarChar, emergencyType)
+            .input('emergencyText', sql.VarChar, emergencyText)
+            .input('latitude', sql.Float, latitude)
+            .input('longitude', sql.Float, longitude)
+            .query(query);
+        console.log('Emergency report inserted successfully.');
     } catch (error) {
-      console.error('Error inserting emergency report:', error);
-      throw error;
+        console.error('Error inserting emergency report:', error);
+        throw error;
     }
-  };
+};
   
 async function getUserByUsername(username) {
     try {

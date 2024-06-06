@@ -1,61 +1,56 @@
-import React, { useState, useEffect } from 'react';
+    // src/MapComponent.js
+import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Fix marker icon issue with React-Leaflet and Webpack
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.6.0/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.6.0/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.6.0/dist/images/marker-shadow.png',
-});
+const MapComponent = () => {delete L.Icon.Default.prototype._getIconUrl;
 
-const AdminMap = () => {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
+    L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+        iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+    });
+    
+    const [complaints, setComplaints] = useState([]);
+    const [emergencies, setEmergencies] = useState([]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('/complaints');
-        const complaints = await response.json();
-        const emergencyResponse = await fetch('/emergencies');
-        const emergencies = await emergencyResponse.json();
-        setData([...complaints, ...emergencies]);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+    useEffect(() => {
+        fetch('/complaints')
+            .then(response => response.json())
+            .then(data => setComplaints(data));
 
-  return (
-    <MapContainer center={[51.505, -0.09]} zoom={13} style={{ height: '600px', width: '100%' }}>
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      />
-      {!loading &&
-        data.map((item, index) => {
-          const [lat, lon] = item.Location.split(',').map(Number);
-          return (
-            <Marker key={index} position={[lat, lon]}>
-              <Popup>
-                <div>
-                  <strong>{item.Name}</strong><br />
-                  {item.Address}<br />
-                  {item.ComplaintType || item.EmergencyType}<br />
-                  {item.ComplaintText || item.EmergencyText}
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
-    </MapContainer>
-  );
+        fetch('/emergencies')
+            .then(response => response.json())
+            .then(data => setEmergencies(data));
+    }, []);
+
+    return (
+        <MapContainer center={[14.6507, 121.1029]} zoom={15} style={{ height: '100vh', width: '100%' }}>
+           <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+            />
+            {complaints.map((complaint, idx) => (
+                <Marker key={`complaint-${idx}`} position={[complaint.Latitude, complaint.Longitude]}>
+                    <Popup>
+                        <strong>{complaint.Name}</strong><br />
+                        {complaint.ComplaintType}<br />
+                        {complaint.ComplaintText}
+                    </Popup>
+                </Marker>
+            ))}
+            {emergencies.map((emergency, idx) => (
+                <Marker key={`emergency-${idx}`} position={[emergency.Latitude, emergency.Longitude]}>
+                    <Popup>
+                        <strong>{emergency.Name}</strong><br />
+                        {emergency.EmergencyType}<br />
+                        {emergency.EmergencyText}
+                    </Popup>
+                </Marker>
+            ))}
+        </MapContainer>
+    );
 };
 
-export default AdminMap;
+export default MapComponent;
