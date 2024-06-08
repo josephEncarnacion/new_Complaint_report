@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination, Box, Typography
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination, Box, Typography, Button
 } from '@mui/material';
-import CustomPaginationActions from '../components/CustomPaginationActions'
+import CustomPaginationActions from '../components/CustomPaginationActions';
 import MapComponent from '../components/MapComponent';
 
 const AdminPage = () => {
@@ -12,8 +12,7 @@ const AdminPage = () => {
   const [complaintRowsPerPage, setComplaintRowsPerPage] = useState(10);
   const [emergencyPage, setEmergencyPage] = useState(0);
   const [emergencyRowsPerPage, setEmergencyRowsPerPage] = useState(10);
-  
-  
+
   useEffect(() => {
     fetchComplaints(complaintPage, complaintRowsPerPage);
   }, [complaintPage, complaintRowsPerPage]);
@@ -32,6 +31,20 @@ const AdminPage = () => {
     const response = await fetch(`/emergencies?page=${page + 1}&pageSize=${pageSize}`);
     const data = await response.json();
     setEmergencies(data);
+  };
+
+  const handleDeleteComplaint = async (name) => {
+    if (window.confirm('Are you sure you want to delete this complaint?')) {
+      await fetch(`/complaints/${name}`, { method: 'DELETE' });
+      fetchComplaints(complaintPage, complaintRowsPerPage);
+    }
+  };
+
+  const handleDeleteEmergency = async (name) => {
+    if (window.confirm('Are you sure you want to delete this emergency?')) {
+      await fetch(`/emergencies/${name}`, { method: 'DELETE' });
+      fetchEmergencies(emergencyPage, emergencyRowsPerPage);
+    }
   };
 
   const handleComplaintPageChange = (event, newPage) => {
@@ -68,6 +81,7 @@ const AdminPage = () => {
                 <TableCell>Address</TableCell>
                 <TableCell>Complaint Type</TableCell>
                 <TableCell>Complaint Text</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -77,6 +91,15 @@ const AdminPage = () => {
                   <TableCell>{complaint.Address}</TableCell>
                   <TableCell>{complaint.ComplaintType}</TableCell>
                   <TableCell>{complaint.ComplaintText}</TableCell>
+                  <TableCell>
+                    <Button 
+                      variant="contained" 
+                      color="secondary" 
+                      onClick={() => handleDeleteComplaint(complaint.Name)}
+                    >
+                      Delete
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -107,6 +130,7 @@ const AdminPage = () => {
                 <TableCell>Address</TableCell>
                 <TableCell>Emergency Type</TableCell>
                 <TableCell>Emergency Text</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -116,6 +140,15 @@ const AdminPage = () => {
                   <TableCell>{emergency.Address}</TableCell>
                   <TableCell>{emergency.EmergencyType}</TableCell>
                   <TableCell>{emergency.EmergencyText}</TableCell>
+                  <TableCell>
+                    <Button 
+                      variant="contained" 
+                      color="secondary" 
+                      onClick={() => handleDeleteEmergency(emergency.Name)}
+                    >
+                      Delete
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

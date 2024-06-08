@@ -109,6 +109,37 @@ const getPaginatedEmergencies = async (page, pageSize) => {
         throw error;
     }
 };
+
+// Delete complaint by name
+const deleteComplaintByName = async (name) => {
+    try {
+        let pool = await sql.connect(config);
+        const query = 'DELETE FROM Complaint_tbl WHERE Name = @name';
+        await pool.request()
+            .input('name', sql.VarChar, name)
+            .query(query);
+        console.log('Complaint deleted successfully.');
+    } catch (error) {
+        console.error('Error deleting complaint:', error);
+        throw error;
+    }
+};
+
+// Delete emergency by name
+const deleteEmergencyByName = async (name) => {
+    try {
+        let pool = await sql.connect(config);
+        const query = 'DELETE FROM Emergency_tbl WHERE Name = @name';
+        await pool.request()
+            .input('name', sql.VarChar, name)
+            .query(query);
+        console.log('Emergency deleted successfully.');
+    } catch (error) {
+        console.error('Error deleting emergency:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     insertEmergencyReport,
     getPaginatedEmergencies,
@@ -116,4 +147,6 @@ module.exports = {
     insertComplaint,
     getUserByUsername,
     insertUser,
+    deleteComplaintByName,
+    deleteEmergencyByName,
 };

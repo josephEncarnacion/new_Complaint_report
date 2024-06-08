@@ -110,5 +110,29 @@ app.get('*', (req, res) => {
     // Verify the registration data and create a new user
     res.json({ success: true });
   });
+  // Delete complaint by name
+app.delete('/complaints/:name', async (req, res) => {
+  const { name } = req.params;
+  try {
+      await dbOperation.deleteComplaintByName(name);
+      res.status(200).json({ success: true, message: 'Complaint deleted successfully.' });
+  } catch (error) {
+      console.error('Error deleting complaint:', error);
+      res.status(500).json({ success: false, message: 'Failed to delete complaint.' });
+  }
+});
+
+// Delete emergency by name
+app.delete('/emergencies/:name', async (req, res) => {
+  const { name } = req.params;
+  try {
+      await dbOperation.deleteEmergencyByName(name);
+      res.status(200).json({ success: true, message: 'Emergency deleted successfully.' });
+  } catch (error) {
+      console.error('Error deleting emergency:', error);
+      res.status(500).json({ success: false, message: 'Failed to delete emergency.' });
+  }
+});
+
   
 app.listen(API_PORT, () => console.log(`Server is running on port ${API_PORT}`));
