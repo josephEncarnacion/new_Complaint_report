@@ -35,15 +35,49 @@ const AdminPage = () => {
 
   const handleDeleteComplaint = async (name) => {
     if (window.confirm('Are you sure you want to delete this complaint?')) {
-      await fetch(`/complaints/${name}`, { method: 'DELETE' });
-      fetchComplaints(complaintPage, complaintRowsPerPage);
+      const response = await fetch(`/complaints/${name}`, { method: 'DELETE' });
+      const result = await response.json();
+      if (result.success) {
+        fetchComplaints(complaintPage, complaintRowsPerPage);
+      } else {
+        alert('Failed to delete complaint');
+      }
+    }
+  };
+
+  const handleConfirmComplaint = async (name) => {
+    if (window.confirm('Are you sure you want to confirm this complaint?')) {
+      const response = await fetch(`/complaints/confirm/${name}`, { method: 'POST' });
+      const result = await response.json();
+      if (result.success) {
+        fetchComplaints(complaintPage, complaintRowsPerPage);
+      } else {
+        alert('Failed to confirm complaint');
+      }
     }
   };
 
   const handleDeleteEmergency = async (name) => {
     if (window.confirm('Are you sure you want to delete this emergency?')) {
-      await fetch(`/emergencies/${name}`, { method: 'DELETE' });
-      fetchEmergencies(emergencyPage, emergencyRowsPerPage);
+      const response = await fetch(`/emergencies/${name}`, { method: 'DELETE' });
+      const result = await response.json();
+      if (result.success) {
+        fetchEmergencies(emergencyPage, emergencyRowsPerPage);
+      } else {
+        alert('Failed to delete emergency');
+      }
+    }
+  };
+
+  const handleConfirmEmergency = async (name) => {
+    if (window.confirm('Are you sure you want to confirm this emergency?')) {
+      const response = await fetch(`/emergencies/confirm/${name}`, { method: 'POST' });
+      const result = await response.json();
+      if (result.success) {
+        fetchEmergencies(emergencyPage, emergencyRowsPerPage);
+      } else {
+        alert('Failed to confirm emergency');
+      }
     }
   };
 
@@ -67,108 +101,92 @@ const AdminPage = () => {
 
   return (
     <Box sx={{ padding: 4 }}>
-      <Typography variant="h4" align="center" gutterBottom>
-        Admin Dashboard
+            
+        <Typography variant="h4" gutterBottom>
+        Maps
       </Typography>
       <MapComponent/>
-      <Box mt={4}>
-        <Typography variant="h6">Complaints</Typography>
-        <TableContainer component={Paper} sx={{ mb: 4 }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Address</TableCell>
-                <TableCell>Complaint Type</TableCell>
-                <TableCell>Complaint Text</TableCell>
-                <TableCell>Actions</TableCell>
+      <Typography variant="h4" gutterBottom>
+        Complaints
+      </Typography>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell>Address</TableCell>
+              <TableCell>Type</TableCell>
+              <TableCell>Description</TableCell>
+              <TableCell>Location</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {complaints.map((complaint) => (
+              <TableRow key={complaint.Name}>
+                <TableCell>{complaint.Name}</TableCell>
+                <TableCell>{complaint.Address}</TableCell>
+                <TableCell>{complaint.ComplaintType}</TableCell>
+                <TableCell>{complaint.ComplaintText}</TableCell>
+                <TableCell>
+                  <Button onClick={() => handleConfirmComplaint(complaint.Name)}>Confirm</Button>
+                  <Button onClick={() => handleDeleteComplaint(complaint.Name)}>Delete</Button>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {complaints.map((complaint) => (
-                <TableRow key={complaint.ComplaintID}>
-                  <TableCell>{complaint.Name}</TableCell>
-                  <TableCell>{complaint.Address}</TableCell>
-                  <TableCell>{complaint.ComplaintType}</TableCell>
-                  <TableCell>{complaint.ComplaintText}</TableCell>
-                  <TableCell>
-                    <Button 
-                      variant="contained" 
-                      color="secondary" 
-                      onClick={() => handleDeleteComplaint(complaint.Name)}
-                    >
-                      Delete
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: 2 }}>
-            <TablePagination
-              rowsPerPageOptions={[10, 25, 50]}
-              component="div"
-              count={-1}  // Server-side pagination, so -1 to hide the total count
-              rowsPerPage={complaintRowsPerPage}
-              page={complaintPage}
-              onPageChange={handleComplaintPageChange}
-              onRowsPerPageChange={handleComplaintRowsPerPageChange}
-              ActionsComponent={(subProps) => (
-                <CustomPaginationActions {...subProps} count={complaints.length} />
-              )}
-            />
-          </Box>
-        </TableContainer>
-      </Box>
-      <Box mt={4}>
-        <Typography variant="h6">Emergencies</Typography>
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Address</TableCell>
-                <TableCell>Emergency Type</TableCell>
-                <TableCell>Emergency Text</TableCell>
-                <TableCell>Actions</TableCell>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <TablePagination
+        component="div"
+        count={complaints.length}
+        page={complaintPage}
+        onPageChange={handleComplaintPageChange}
+        rowsPerPage={complaintRowsPerPage}
+        onRowsPerPageChange={handleComplaintRowsPerPageChange}
+        ActionsComponent={CustomPaginationActions}
+      />
+
+      <Typography variant="h4" gutterBottom>
+        Emergencies
+      </Typography>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell>Address</TableCell>
+              <TableCell>Type</TableCell>
+              <TableCell>Description</TableCell>
+              <TableCell>Location</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {emergencies.map((emergency) => (
+              <TableRow key={emergency.Name}>
+                <TableCell>{emergency.Name}</TableCell>
+                <TableCell>{emergency.Address}</TableCell>
+                <TableCell>{emergency.EmergencyType}</TableCell>
+                <TableCell>{emergency.EmergencyText}</TableCell>
+                <TableCell>
+                  <Button onClick={() => handleConfirmEmergency(emergency.Name)}>Confirm</Button>
+                  <Button onClick={() => handleDeleteEmergency(emergency.Name)}>Delete</Button>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {emergencies.map((emergency) => (
-                <TableRow key={emergency.EmergencyID}>
-                  <TableCell>{emergency.Name}</TableCell>
-                  <TableCell>{emergency.Address}</TableCell>
-                  <TableCell>{emergency.EmergencyType}</TableCell>
-                  <TableCell>{emergency.EmergencyText}</TableCell>
-                  <TableCell>
-                    <Button 
-                      variant="contained" 
-                      color="secondary" 
-                      onClick={() => handleDeleteEmergency(emergency.Name)}
-                    >
-                      Delete
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: 2 }}>
-            <TablePagination
-              rowsPerPageOptions={[10, 25, 50]}
-              component="div"
-              count={-1}  // Server-side pagination, so -1 to hide the total count
-              rowsPerPage={emergencyRowsPerPage}
-              page={emergencyPage}
-              onPageChange={handleEmergencyPageChange}
-              onRowsPerPageChange={handleEmergencyRowsPerPageChange}
-              ActionsComponent={(subProps) => (
-                <CustomPaginationActions {...subProps} count={emergencies.length} />
-              )}
-            />
-          </Box>
-        </TableContainer>
-      </Box>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <TablePagination
+        component="div"
+        count={emergencies.length}
+        page={emergencyPage}
+        onPageChange={handleEmergencyPageChange}
+        rowsPerPage={emergencyRowsPerPage}
+        onRowsPerPageChange={handleEmergencyRowsPerPageChange}
+        ActionsComponent={CustomPaginationActions}
+      />
     </Box>
   );
 };

@@ -133,6 +133,29 @@ app.delete('/emergencies/:name', async (req, res) => {
       res.status(500).json({ success: false, message: 'Failed to delete emergency.' });
   }
 });
+app.post('/complaints/confirm/:name', async (req, res) => {
+  const { name } = req.params;
+  try {
+      await dbOperation.confirmComplaintByName(name);
+      res.status(200).json({ success: true, message: 'Complaint confirmed successfully.' });
+  } catch (error) {
+      console.error('Error confirming complaint:', error);
+      res.status(500).json({ success: false, message: 'Failed to confirm complaint.' });
+  }
+});
+
+app.post('/emergencies/confirm/:name', async (req, res) => {
+  const { name } = req.params;
+  try {
+      await dbOperation.confirmEmergencyByName(name);
+      res.status(200).json({ success: true, message: 'Emergency confirmed successfully.' });
+  } catch (error) {
+      console.error('Error confirming emergency:', error);
+      res.status(500).json({ success: false, message: 'Failed to confirm emergency.' });
+  }
+});
+
+
 
   
 app.listen(API_PORT, () => console.log(`Server is running on port ${API_PORT}`));

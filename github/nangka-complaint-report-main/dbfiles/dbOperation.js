@@ -139,6 +139,73 @@ const deleteEmergencyByName = async (name) => {
         throw error;
     }
 };
+const confirmComplaintByName = async (name) => {
+    try {
+        let pool = await sql.connect(config);
+
+        // Select the complaint to be confirmed
+        let complaintResult = await pool.request()
+            .input('name', sql.VarChar, name)
+            .query('SELECT * FROM Complaint_tbl WHERE Name = @name');
+
+        if (complaintResult.recordset.length > 0) {
+            const complaint = complaintResult.recordset[0];
+
+            // Insert the complaint into ConfirmedComplaint_tbl
+            await pool.request()
+                .input('name', sql.VarChar, complaint.Name)
+                .input('address', sql.VarChar, complaint.Address)
+                .input('complaintType', sql.VarChar, complaint.ComplaintType)
+                .input('complaintText', sql.Text, complaint.ComplaintText)
+                .input('latitude', sql.Float, complaint.Latitude)
+                .input('longitude', sql.Float, complaint.Longitude)
+                .query(`INSERT INTO ConfirmedComplaint_tbl (Name, Address, ComplaintType, ComplaintText, Latitude, Longitude) 
+                        VALUES (@name, @address, @complaintType, @complaintText, @latitude, @longitude)`);
+
+            // Delete the complaint from Complaint_tbl
+            await pool.request()
+                .input('name', sql.VarChar, name)
+                .query('DELETE FROM Complaint_tbl WHERE Name = @name');
+        }
+    } catch (error) {
+        console.error('Error confirming complaint:', error);
+        throw error;
+    }
+};
+
+const confirmEmergencyByName = async (name) => {
+    try {
+        let pool = await sql.connect(config);
+
+        // Select the emergency to be confirmed
+        let emergencyResult = await pool.request()
+            .input('name', sql.VarChar, name)
+            .query('SELECT * FROM Emergency_tbl WHERE Name = @name');
+
+        if (emergencyResult.recordset.length > 0) {
+            const emergency = emergencyResult.recordset[0];
+
+            // Insert the emergency into ConfirmedEmergency_tbl
+            await pool.request()
+                .input('name', sql.VarChar, emergency.Name)
+                .input('address', sql.VarChar, emergency.Address)
+                .input('emergencyType', sql.VarChar, emergency.EmergencyType)
+                .input('emergencyText', sql.Text, emergency.EmergencyText)
+                .input('latitude', sql.Float, emergency.Latitude)
+                .input('longitude', sql.Float, emergency.Longitude)
+                .query(`INSERT INTO ConfirmedEmergency_tbl (Name, Address, EmergencyType, EmergencyText, Latitude, Longitude) 
+                        VALUES (@name, @address, @emergencyType, @emergencyText, @latitude, @longitude)`);
+
+            // Delete the emergency from Emergency_tbl
+            await pool.request()
+                .input('name', sql.VarChar, name)
+                .query('DELETE FROM Emergency_tbl WHERE Name = @name');
+        }
+    } catch (error) {
+        console.error('Error confirming emergency:', error);
+        throw error;
+    }
+};
 
 module.exports = {
     insertEmergencyReport,
@@ -149,4 +216,6 @@ module.exports = {
     insertUser,
     deleteComplaintByName,
     deleteEmergencyByName,
+    confirmComplaintByName,
+    confirmEmergencyByName,
 };
