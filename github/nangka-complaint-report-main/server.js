@@ -8,6 +8,20 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // Use extended to parse nested objects
 app.use(cors());
 
+const { getConfirmedComplaints, getConfirmedEmergencies } = require('./dbfiles/dbOperation');
+
+app.get('/api/confirmedReports', async (req, res) => {
+    try {
+        const confirmedComplaints = await getConfirmedComplaints();
+        const confirmedEmergencies = await getConfirmedEmergencies();
+        res.json({
+            complaints: confirmedComplaints,
+            emergencies: confirmedEmergencies
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch confirmed reports' });
+    }
+});
 
 
 
@@ -154,8 +168,5 @@ app.post('/emergencies/confirm/:name', async (req, res) => {
       res.status(500).json({ success: false, message: 'Failed to confirm emergency.' });
   }
 });
-
-
-
   
 app.listen(API_PORT, () => console.log(`Server is running on port ${API_PORT}`));

@@ -206,6 +206,31 @@ const confirmEmergencyByName = async (name) => {
         throw error;
     }
 };
+const getConfirmedComplaints = async () => {
+    try {
+        let pool = await sql.connect(config);
+        const query = 'SELECT * FROM ConfirmedComplaint_tbl';
+        const result = await pool.request().query(query);
+        return result.recordset;
+    } catch (error) {
+        console.error('Error retrieving confirmed complaints:', error);
+        throw error;
+    }
+};
+
+const getConfirmedEmergencies = async () => {
+    try {
+        let pool = await sql.connect(config);
+        const query = 'SELECT * FROM ConfirmedEmergency_tbl';
+        const result = await pool.request().query(query);
+        return result.recordset;
+    } catch (error) {
+        console.error('Error retrieving confirmed emergencies:', error);
+        throw error;
+    }
+};
+
+   
 
 module.exports = {
     insertEmergencyReport,
@@ -218,4 +243,6 @@ module.exports = {
     deleteEmergencyByName,
     confirmComplaintByName,
     confirmEmergencyByName,
+    getConfirmedComplaints,
+    getConfirmedEmergencies,
 };

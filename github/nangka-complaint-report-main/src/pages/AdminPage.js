@@ -117,7 +117,6 @@ const AdminPage = () => {
               <TableCell>Address</TableCell>
               <TableCell>Type</TableCell>
               <TableCell>Description</TableCell>
-              <TableCell>Location</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -158,7 +157,6 @@ const AdminPage = () => {
               <TableCell>Address</TableCell>
               <TableCell>Type</TableCell>
               <TableCell>Description</TableCell>
-              <TableCell>Location</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>

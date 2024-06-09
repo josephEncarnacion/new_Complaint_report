@@ -8,6 +8,7 @@ import Register from './pages/register';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminPage from './pages/AdminPage';
+import ResponseTeam from './pages/ResponseTeam';
 
 const App = () => {
   useEffect(() => {
@@ -43,6 +44,8 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/response" element={<ResponseTeam />} />
+
         <Route
           path="*"
           element={
