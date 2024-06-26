@@ -102,8 +102,8 @@ const AdminPage = () => {
   return (
     <Box sx={{ padding: 4 }}>
             
-        <Typography variant="h4" gutterBottom>
-        Maps
+        <Typography variant="h3" gutterBottom align='center'>
+        Desk Officer 
       </Typography>
       <MapComponent/>
       <Typography variant="h4" gutterBottom>
@@ -128,7 +128,7 @@ const AdminPage = () => {
                 <TableCell>{complaint.ComplaintType}</TableCell>
                 <TableCell>{complaint.ComplaintText}</TableCell>
                 <TableCell>
-                  <Button onClick={() => handleConfirmComplaint(complaint.Name)}>Confirm</Button>
+                  <Button onClick={() => handleConfirmComplaint(complaint.Name)}>Dispatch</Button>
                   <Button onClick={() => handleDeleteComplaint(complaint.Name)}>Delete</Button>
                 </TableCell>
               </TableRow>
@@ -168,7 +168,7 @@ const AdminPage = () => {
                 <TableCell>{emergency.EmergencyType}</TableCell>
                 <TableCell>{emergency.EmergencyText}</TableCell>
                 <TableCell>
-                  <Button onClick={() => handleConfirmEmergency(emergency.Name)}>Confirm</Button>
+                  <Button onClick={() => handleConfirmEmergency(emergency.Name)}>Dispatch</Button>
                   <Button onClick={() => handleDeleteEmergency(emergency.Name)}>Delete</Button>
                 </TableCell>
               </TableRow>

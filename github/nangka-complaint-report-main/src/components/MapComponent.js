@@ -34,18 +34,20 @@ const MapComponent = () => {delete L.Icon.Default.prototype._getIconUrl;
             {complaints.map((complaint, idx) => (
                 <Marker key={`complaint-${idx}`} position={[complaint.Latitude, complaint.Longitude]}>
                     <Popup>
-                        <strong>{complaint.Name}</strong><br />
-                        {complaint.ComplaintType}<br />
-                        {complaint.ComplaintText}
+                    <strong>Name:</strong>    <strong>{complaint.Name}</strong><br />
+                    <strong>Address:</strong>    {complaint.Address}<br />
+                    <strong>Type:</strong>    {complaint.ComplaintType}<br />
+                    <strong>Description:</strong>    {complaint.ComplaintText}
                     </Popup>
                 </Marker>
             ))}
             {emergencies.map((emergency, idx) => (
                 <Marker key={`emergency-${idx}`} position={[emergency.Latitude, emergency.Longitude]}>
                     <Popup>
-                        <strong>{emergency.Name}</strong><br />
-                        {emergency.EmergencyType}<br />
-                        {emergency.EmergencyText}
+                    <strong>Name:</strong> <strong>{emergency.Name}</strong><br />
+                    <strong>Address:</strong>    {emergency.Address}<br />
+                    <strong>Type:</strong>    {emergency.EmergencyType}<br />
+                    <strong>Description:</strong>    {emergency.EmergencyText}
                     </Popup>
                 </Marker>
             ))}
