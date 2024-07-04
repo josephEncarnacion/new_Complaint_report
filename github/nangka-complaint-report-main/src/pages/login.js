@@ -21,8 +21,14 @@ function Login() {
       });
       const data = await response.json();
       if (data.success) {
-        login();
-        navigate('/');
+        login(data.role);
+        if (data.role === 'Admin') {
+          navigate('/admin');
+        } else if (data.role === 'Response') {
+          navigate('/response');
+        } else {
+          navigate('/');
+        }
       } else {
         alert('Invalid credentials');
       }

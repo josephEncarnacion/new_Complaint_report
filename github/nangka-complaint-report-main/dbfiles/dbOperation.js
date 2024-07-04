@@ -44,7 +44,6 @@ const insertEmergencyReport = async (name, address, emergencyType, emergencyText
         throw error;
     }
 };
-  
 async function getUserByUsername(username) {
     try {
         let pool = await sql.connect(config);
@@ -58,7 +57,6 @@ async function getUserByUsername(username) {
         throw error;
     }
 }
-
 async function insertUser(user) {
     try {
         let pool = await sql.connect(config);

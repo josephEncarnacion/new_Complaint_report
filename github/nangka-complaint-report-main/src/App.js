@@ -1,11 +1,13 @@
+// src/App.js
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import ComplaintReport from './pages/ComplaintReport';
 import EmergencyReport from './pages/EmergencyReport'
-import Login from  './pages/login';
+import Login from './pages/login';
 import Register from './pages/register';
 import { AuthProvider } from './contexts/AuthContext';
+import RoleProtectedRoute from './components/RoleProtectedRoute';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminPage from './pages/AdminPage';
 import ResponseTeam from './pages/ResponseTeam';
@@ -36,17 +38,23 @@ const App = () => {
     getData('http://localhost:5000/api');  // Ensure the URL is correct
   }, []);
 
-  
   return (
     <AuthProvider>
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/response" element={<ResponseTeam />} />
-
-        <Route
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/admin" element={
+            <RoleProtectedRoute allowedRoles={['Admin']}>
+              <AdminPage />
+            </RoleProtectedRoute>
+          } />
+          <Route path="/response" element={
+            <RoleProtectedRoute allowedRoles={['Response']}>
+              <ResponseTeam />
+            </RoleProtectedRoute>
+          } />
+               <Route
           path="*"
           element={
             <ProtectedRoute>
@@ -60,8 +68,8 @@ const App = () => {
           }
         />
       </Routes>
-    </Router>
-  </AuthProvider>
+      </Router>
+    </AuthProvider>
   );
 };
 

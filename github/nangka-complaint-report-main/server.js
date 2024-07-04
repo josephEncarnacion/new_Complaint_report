@@ -87,7 +87,7 @@ app.get('/login', (req, res) => {
     try {
         const user = await dbOperation.getUserByUsername(username);
         if (user && user.password === password) {
-            res.status(200).json({ success: true, message: 'Login successful.' });
+            res.status(200).json({ success: true, role: user.role, message: 'Login successful.' });
         } else {
             res.status(401).json({ success: false, message: 'Invalid credentials.' });
         }
