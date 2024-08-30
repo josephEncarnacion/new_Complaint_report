@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
@@ -10,24 +10,55 @@ import Typography from '@mui/material/Typography';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import axios from 'axios';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const EmergencyForm = () => {
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [emergencyType, setEmergencyType] = useState('');
   const [emergencyText, setEmergencyText] = useState('');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
-  const [location, setLocation] = useState({ lat: null, lng: null });
+  const [location, setLocation] = useState({ lat: 14.6507, lng: 121.1029 }); // Marikina coordinates
   const [locationError, setLocationError] = useState(null);
+  const mapRef = useRef();
+
+  const apiKey = 'pk.0fa1d8fd6faab9f422d6c5e37c514ce1'; // Your LocationIQ API key
+
+  // Custom Marker Icon
+  const markerIcon = new L.Icon({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  });
 
   const handleNameChange = (event) => {
     setName(event.target.value);
   };
 
-  const handleAddressChange = (event) => {
+  const handleAddressChange = async (event) => {
     setAddress(event.target.value);
+    if (event.target.value.length > 3) {
+      try {
+        const response = await axios.get(`https://us1.locationiq.com/v1/autocomplete.php?key=${apiKey}&q=${event.target.value}&format=json`);
+        setAddressSuggestions(response.data);
+      } catch (error) {
+        console.error('Error fetching address suggestions:', error);
+      }
+    } else {
+      setAddressSuggestions([]);
+    }
+  };
+
+  const handleSelectSuggestion = (suggestion) => {
+    setAddress(suggestion.display_name);
+    setLocation({ lat: suggestion.lat, lng: suggestion.lon });
+    setAddressSuggestions([]);
+    mapRef.current.flyTo([suggestion.lat, suggestion.lon], 15);
   };
 
   const handleEmergencyTypeChange = (event) => {
@@ -50,15 +81,11 @@ const EmergencyForm = () => {
         setLocation({ lat: latitude, lng: longitude });
         setLocationError(null);
 
-        console.log(`Obtained coordinates: Latitude = ${latitude}, Longitude = ${longitude}`);
-
-        const apiKey = 'pk.0fa1d8fd6faab9f422d6c5e37c514ce1';
         const url = `https://us1.locationiq.com/v1/reverse.php?key=${apiKey}&lat=${latitude}&lon=${longitude}&format=json`;
 
         try {
           const response = await axios.get(url);
           const data = response.data;
-          console.log('Response from LocationIQ API:', data);
           if (data && data.display_name) {
             setAddress(data.display_name);
           } else {
@@ -94,14 +121,11 @@ const EmergencyForm = () => {
       });
 
       const data = await response.json();
-      console.log('Response from server:', data);
-
       setSnackbarMessage('Emergency report submitted successfully!');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
     } catch (error) {
       console.error('Error submitting emergency report:', error);
-
       setSnackbarMessage('Failed to submit emergency report.');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
@@ -119,14 +143,17 @@ const EmergencyForm = () => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 4,
+        mt: 4,
+        px: { xs: 2, md: 4 },
+        maxWidth: '1200px',
+        margin: 'auto',
       }}
     >
       <Box
         sx={{
-          maxWidth: 900,
-          padding: 2,
-          boxShadow: 1,
+          width: '100%',
+          padding: { xs: 2, md: 4 },
+          boxShadow: 2,
           borderRadius: 4,
           backgroundColor: 'background.paper',
           textAlign: 'center',
@@ -142,20 +169,50 @@ const EmergencyForm = () => {
           value={name}
           onChange={handleNameChange}
           margin="normal"
+          sx={{ mb: 2 }}
         />
         <TextField
           label="Address"
           variant="outlined"
-          multiline
-          rows={3}
           fullWidth
           value={address}
           onChange={handleAddressChange}
           margin="normal"
+          autoComplete="off"
+          sx={{ mb: 2 }}
         />
-        <Box marginTop={2} marginLeft={42}>
+        {addressSuggestions.length > 0 && (
+          <Box
+            sx={{
+              position: 'absolute',
+              zIndex: 1000,
+              backgroundColor: 'white',
+              border: '1px solid #ccc',
+              width: '100%',
+              maxWidth: '600px',
+              maxHeight: '200px',
+              overflowY: 'auto',
+            }}
+          >
+            {addressSuggestions.map((suggestion, index) => (
+              <Box
+                key={index}
+                sx={{
+                  padding: 1,
+                  cursor: 'pointer',
+                  borderBottom: '1px solid #ccc',
+                  '&:hover': { backgroundColor: '#f0f0f0' },
+                }}
+                onClick={() => handleSelectSuggestion(suggestion)}
+              >
+                {suggestion.display_name}
+              </Box>
+            ))}
+          </Box>
+        )}
+        <Box marginTop={2} marginBottom={2}>
           <Button variant="contained" color="primary" onClick={handleGetLocation}>
-            Get Location
+            Get My Location
           </Button>
           {locationError && (
             <Typography variant="body1" color="error" marginTop={2}>
@@ -163,21 +220,42 @@ const EmergencyForm = () => {
             </Typography>
           )}
         </Box>
-         
-        <FormControl fullWidth margin="normal" variant="outlined">
+        <Box
+          sx={{
+            height: { xs: '200px', md: '400px' },
+            mb: 2,
+            borderRadius: '8px',
+            overflow: 'hidden',
+          }}
+        >
+          <MapContainer
+            center={[location.lat, location.lng]}
+            zoom={13}
+            scrollWheelZoom={false}
+            style={{ height: '100%', width: '100%' }}
+            ref={mapRef}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+            <Marker position={[location.lat, location.lng]} icon={markerIcon} />
+          </MapContainer>
+        </Box>
+
+        <FormControl fullWidth margin="normal" variant="outlined" sx={{ mb: 2 }}>
           <InputLabel id="complaint-type-label">Emergency Type</InputLabel>
           <Select
             labelId="complaint-type-label"
             id="complaint-type"
             value={emergencyType}
             onChange={handleEmergencyTypeChange}
-            label="Complaint Type"
+            label="Emergency Type"
           >
             <MenuItem value="Earthquake">Earthquake</MenuItem>
             <MenuItem value="Fire">Fire</MenuItem>
             <MenuItem value="Flood">Flood</MenuItem>
             <MenuItem value="Medical Emergencies">Medical Emergencies</MenuItem>
-            {/* Add more complaint types as needed */}
           </Select>
         </FormControl>
         <TextField
@@ -189,8 +267,9 @@ const EmergencyForm = () => {
           value={emergencyText}
           onChange={handleEmergencyChange}
           margin="normal"
+          sx={{ mb: 2 }}
         />
-       
+
         <Box marginTop={2}>
           <Button variant="contained" color="primary" onClick={handleSubmit}>
             Submit Report
