@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination, Box, Typography, Button
+  Button, TableContainer, TableHead, AppBar, Toolbar, IconButton, Typography, Box, Drawer, List, ListItem, ListItemIcon, ListItemText, CssBaseline, Divider, Container, Table, TableBody, TableCell, TableRow, Paper, TablePagination
 } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import MapIcon from '@mui/icons-material/Map';
+import ReportIcon from '@mui/icons-material/Report';
 import CustomPaginationActions from '../components/CustomPaginationActions';
 import MapComponent from '../components/MapComponent';
 
+const drawerWidth = 240;
+
 const AdminPage = () => {
+  const [selectedSection, setSelectedSection] = useState('dashboard');
   const [complaints, setComplaints] = useState([]);
   const [emergencies, setEmergencies] = useState([]);
   const [complaintPage, setComplaintPage] = useState(0);
@@ -14,12 +21,16 @@ const AdminPage = () => {
   const [emergencyRowsPerPage, setEmergencyRowsPerPage] = useState(10);
 
   useEffect(() => {
-    fetchComplaints(complaintPage, complaintRowsPerPage);
-  }, [complaintPage, complaintRowsPerPage]);
+    if (selectedSection === 'complaints') {
+      fetchComplaints(complaintPage, complaintRowsPerPage);
+    }
+  }, [complaintPage, complaintRowsPerPage, selectedSection]);
 
   useEffect(() => {
-    fetchEmergencies(emergencyPage, emergencyRowsPerPage);
-  }, [emergencyPage, emergencyRowsPerPage]);
+    if (selectedSection === 'emergencies') {
+      fetchEmergencies(emergencyPage, emergencyRowsPerPage);
+    }
+  }, [emergencyPage, emergencyRowsPerPage, selectedSection]);
 
   const fetchComplaints = async (page, pageSize) => {
     const response = await fetch(`/complaints?page=${page + 1}&pageSize=${pageSize}`);
@@ -99,92 +110,163 @@ const AdminPage = () => {
     setEmergencyPage(0);
   };
 
-  return (
-    <Box sx={{ padding: 4 }}>
-            
-        <Typography variant="h3" gutterBottom align='center'>
-        Desk Officer 
-      </Typography>
-      <MapComponent/>
-      <Typography variant="h4" gutterBottom>
-        Complaints
-      </Typography>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Address</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {complaints.map((complaint) => (
-              <TableRow key={complaint.Name}>
-                <TableCell>{complaint.Name}</TableCell>
-                <TableCell>{complaint.Address}</TableCell>
-                <TableCell>{complaint.ComplaintType}</TableCell>
-                <TableCell>{complaint.ComplaintText}</TableCell>
-                <TableCell>
-                  <Button onClick={() => handleConfirmComplaint(complaint.Name)}>Dispatch</Button>
-                  <Button onClick={() => handleDeleteComplaint(complaint.Name)}>Delete</Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <TablePagination
-        component="div"
-        count={complaints.length}
-        page={complaintPage}
-        onPageChange={handleComplaintPageChange}
-        rowsPerPage={complaintRowsPerPage}
-        onRowsPerPageChange={handleComplaintRowsPerPageChange}
-        ActionsComponent={CustomPaginationActions}
-      />
+  const handleSectionChange = (section) => {
+    setSelectedSection(section);
+  };
 
-      <Typography variant="h4" gutterBottom>
-        Emergencies
-      </Typography>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Address</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {emergencies.map((emergency) => (
-              <TableRow key={emergency.Name}>
-                <TableCell>{emergency.Name}</TableCell>
-                <TableCell>{emergency.Address}</TableCell>
-                <TableCell>{emergency.EmergencyType}</TableCell>
-                <TableCell>{emergency.EmergencyText}</TableCell>
-                <TableCell>
-                  <Button onClick={() => handleConfirmEmergency(emergency.Name)}>Dispatch</Button>
-                  <Button onClick={() => handleDeleteEmergency(emergency.Name)}>Delete</Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <TablePagination
-        component="div"
-        count={emergencies.length}
-        page={emergencyPage}
-        onPageChange={handleEmergencyPageChange}
-        rowsPerPage={emergencyRowsPerPage}
-        onRowsPerPageChange={handleEmergencyRowsPerPageChange}
-        ActionsComponent={CustomPaginationActions}
-      />
+  const renderSection = () => {
+    switch (selectedSection) {
+      case 'map':
+        return <MapComponent />;
+      case 'complaints':
+        return (
+          <Container sx={{ mt: 4 }}>
+            <Typography variant="h5" gutterBottom>
+              Complaints
+            </Typography>
+            <TableContainer component={Paper} sx={{ mb: 4 }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Address</TableCell>
+                    <TableCell>Type</TableCell>
+                    <TableCell>Description</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {complaints.map((complaint) => (
+                    <TableRow key={complaint.Name}>
+                      <TableCell>{complaint.Name}</TableCell>
+                      <TableCell>{complaint.Address}</TableCell>
+                      <TableCell>{complaint.ComplaintType}</TableCell>
+                      <TableCell>{complaint.ComplaintText}</TableCell>
+                      <TableCell>
+                        <Button onClick={() => handleConfirmComplaint(complaint.Name)} color="primary">Dispatch</Button>
+                        <Button onClick={() => handleDeleteComplaint(complaint.Name)} color="secondary">Delete</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <TablePagination
+              component="div"
+              count={complaints.length}
+              page={complaintPage}
+              onPageChange={handleComplaintPageChange}
+              rowsPerPage={complaintRowsPerPage}
+              onRowsPerPageChange={handleComplaintRowsPerPageChange}
+              ActionsComponent={CustomPaginationActions}
+            />
+          </Container>
+        );
+      case 'emergencies':
+        return (
+          <Container sx={{ mt: 4 }}>
+            <Typography variant="h5" gutterBottom>
+              Emergencies
+            </Typography>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Address</TableCell>
+                    <TableCell>Type</TableCell>
+                    <TableCell>Description</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {emergencies.map((emergency) => (
+                    <TableRow key={emergency.Name}>
+                      <TableCell>{emergency.Name}</TableCell>
+                      <TableCell>{emergency.Address}</TableCell>
+                      <TableCell>{emergency.EmergencyType}</TableCell>
+                      <TableCell>{emergency.EmergencyText}</TableCell>
+                      <TableCell>
+                        <Button onClick={() => handleConfirmEmergency(emergency.Name)} color="primary">Dispatch</Button>
+                        <Button onClick={() => handleDeleteEmergency(emergency.Name)} color="secondary">Delete</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <TablePagination
+              component="div"
+              count={emergencies.length}
+              page={emergencyPage}
+              onPageChange={handleEmergencyPageChange}
+              rowsPerPage={emergencyRowsPerPage}
+              onRowsPerPageChange={handleEmergencyRowsPerPageChange}
+              ActionsComponent={CustomPaginationActions}
+            />
+          </Container>
+        );
+      default:
+        return <Typography variant="h4" align="center">Welcome to the Dashboard</Typography>;
+    }
+  };
+
+  return (
+    <Box sx={{ display: 'flex' }}>
+      <CssBaseline />
+      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+        <Toolbar>
+          <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }}>
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+            Admin Dashboard
+          </Typography>
+        </Toolbar>
+      </AppBar>
+      <Drawer
+        variant="permanent"
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box' },
+        }}
+      >
+        <Toolbar />
+        <Box sx={{ overflow: 'auto' }}>
+          <List>
+            <ListItem button onClick={() => handleSectionChange('dashboard')}>
+              <ListItemIcon>
+                <DashboardIcon />
+              </ListItemIcon>
+              <ListItemText primary="Dashboard" />
+            </ListItem>
+            <ListItem button onClick={() => handleSectionChange('map')}>
+              <ListItemIcon>
+                <MapIcon />
+              </ListItemIcon>
+              <ListItemText primary="Map" />
+            </ListItem>
+            <Divider />
+            <ListItem button onClick={() => handleSectionChange('complaints')}>
+              <ListItemIcon>
+                <ReportIcon />
+              </ListItemIcon>
+              <ListItemText primary="Complaints" />
+            </ListItem>
+            <ListItem button onClick={() => handleSectionChange('emergencies')}>
+              <ListItemIcon>
+                <ReportIcon />
+              </ListItemIcon>
+              <ListItemText primary="Emergencies" />
+            </ListItem>
+          </List>
+        </Box>
+      </Drawer>
+      <Box component="main" sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3 }}>
+        <Toolbar />
+        {renderSection()}
+      </Box>
     </Box>
   );
 };
