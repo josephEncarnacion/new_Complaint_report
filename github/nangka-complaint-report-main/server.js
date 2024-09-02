@@ -102,28 +102,22 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'client/build/index.html'));
 });
 
-  app.post('/register', async (req, res) => {
-    const { username, email, password } = req.body;
-    try {
-      // Check if the user already exists
+app.post('/register', async (req, res) => {
+  const { username, firstName, lastName, password } = req.body;
+  try {
       const existingUser = await dbOperation.getUserByUsername(username);
       if (existingUser) {
-        res.status(400).json({ success: false, message: 'Username already exists.' });
-      } else {
-        // Insert the new user into the database
-        await dbOperation.insertUser({ username, email, password });
-        res.status(200).json({ success: true, message: 'Registration successful.' });
+          return res.status(400).json({ success: false, message: 'Username already exists.' });
       }
-    } catch (error) {
+      await dbOperation.insertUser({ username, firstName, lastName, password });
+      res.status(200).json({ success: true, message: 'Registration successful.' });
+  } catch (error) {
       console.error('Error registering:', error);
       res.status(500).json({ success: false, message: 'Error registering.' });
-    }
-  });
-  app.post('/api/register', (req, res) => {
-    const { username, email, password } = req.body;
-    // Verify the registration data and create a new user
-    res.json({ success: true });
-  });
+  }
+});
+
+
   // Delete complaint by name
 app.delete('/complaints/:name', async (req, res) => {
   const { name } = req.params;

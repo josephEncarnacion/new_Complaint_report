@@ -2,11 +2,12 @@
 import React, { useState } from 'react';
 import { Grid, TextField, Button, Typography, Paper, Box, Checkbox, FormControlLabel, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import { Link } from 'react-router-dom';
-import { validateEmail, validatePassword } from '../utils/validation'; // Ensure validation.js exists
+import {  validatePassword } from '../utils/validation'; // Ensure validation.js exists
 
 function Register() {
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState(''); 
   const [password, setPassword] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [error, setError] = useState('');
@@ -16,10 +17,6 @@ function Register() {
     event.preventDefault();
 
     // Input validation
-    if (!validateEmail(email)) {
-      setError('Please enter a valid email address.');
-      return;
-    }
     if (!validatePassword(password)) {
       setError('Password must be at least 8 characters long, include an uppercase letter, a number, and a special character.');
       return;
@@ -33,7 +30,7 @@ function Register() {
       const response = await fetch('/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, firstName, lastName, password }),
       });
 
       const data = await response.json();
@@ -42,6 +39,9 @@ function Register() {
       } else {
         setError('Registration failed. Please try again.');
       }
+      if (data.message === 'Username already exists.') {
+        setError('The username is already taken. Please choose another one.');
+      } 
     } catch (error) {
       console.error('Error registering:', error);
       setError('An error occurred during registration. Please try again later.');
@@ -81,9 +81,18 @@ function Register() {
               </Grid>
               <Grid item xs={12}>
                 <TextField
-                  label="Email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  label="First Name"
+                  value={firstName}
+                  onChange={(event) => setFirstName(event.target.value)}
+                  fullWidth
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Last Name"
+                  value={lastName}
+                  onChange={(event) => setLastName(event.target.value)}
                   fullWidth
                   required
                 />

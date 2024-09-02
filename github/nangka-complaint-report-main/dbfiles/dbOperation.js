@@ -60,10 +60,11 @@ async function getUserByUsername(username) {
 async function insertUser(user) {
     try {
         let pool = await sql.connect(config);
-        const query = 'INSERT INTO users (username, email, password) VALUES (@username, @email, @password)';
+        const query = 'INSERT INTO users (username, first_name, last_name, password) VALUES (@username, @firstName, @lastName, @password)';
         await pool.request()
             .input('username', sql.VarChar, user.username)
-            .input('email', sql.VarChar, user.email)
+            .input('firstName', sql.VarChar, user.firstName)
+            .input('lastName', sql.VarChar, user.lastName)
             .input('password', sql.VarChar, user.password)
             .query(query);
         console.log('User inserted successfully.');
