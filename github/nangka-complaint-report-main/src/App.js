@@ -54,11 +54,10 @@ const App = () => {
               <ResponseTeam />
             </RoleProtectedRoute>
           } />
-               <Route
+        <Route
           path="*"
           element={
             <ProtectedRoute>
-              
               <Routes>
                 <Route exact path="/" element={<Home />} />
                 <Route path="ComplaintReport" element={<ComplaintReport />} />

@@ -260,6 +260,12 @@ const AdminPage = () => {
               </ListItemIcon>
               <ListItemText primary="Emergencies" />
             </ListItem>
+            <ListItem button onClick={() => handleSectionChange('monitoring')}>
+              <ListItemIcon>
+                <DashboardIcon /> {/* You can use a different icon */}
+              </ListItemIcon>
+              <ListItemText primary="Monitoring" />
+            </ListItem>
           </List>
         </Box>
       </Drawer>
