@@ -3,8 +3,11 @@ import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet'
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
-import { Button, Container } from '@mui/material';
+import { Button, Container, Box, AppBar, Toolbar, Typography, IconButton } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import LogoutIcon from '@mui/icons-material/Logout';
 import polyline from '@mapbox/polyline';
+import { useAuth } from '../contexts/AuthContext'; // Use the useAuth hook
 
 // Create a custom icon for the vehicle using LocalTaxiIcon
 const vehicleIcon = L.divIcon({
@@ -31,6 +34,7 @@ const ResponseTeam = () => {
   const [currentPosition, setCurrentPosition] = useState(null);
   const [confirmedReports, setConfirmedReports] = useState([]);
   const [route, setRoute] = useState([]);
+  const { logout } = useAuth(); 
 
   useEffect(() => {
     // Get current position
@@ -96,32 +100,58 @@ const ResponseTeam = () => {
   };
 
   return (
-    <Container>
-      <h1>Response Team</h1>
-      {currentPosition && (
-        <MapContainer center={currentPosition} zoom={13} style={{ height: '600px', width: '100%' }}>
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          <Marker position={currentPosition} icon={vehicleIcon}>
-            <Popup>Your Location</Popup>
-          </Marker>
-          {confirmedReports.map((report, index) => (
-            <Marker key={index} position={[report.Latitude, report.Longitude]} icon={defaultMarkerIcon}>
-              <Popup>
-              <strong>Name:</strong>  {report.Name} <br/>
-              <strong>Address:</strong> {report.Address}<br />
-              <strong>Report:</strong> {report.EmergencyType || report.ComplaintType}<br />
-                <Button variant="contained" onClick={() => getDirections([report.Latitude, report.Longitude])}>
-                  Get Directions
-                </Button>
-              </Popup>
-            </Marker>
-          ))}
-          {route.length > 0 && <Polyline positions={route} color="blue" />}
-        </MapContainer>
-      )}
-      
-    </Container>
-    
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+      {/* Responsive Navbar */}
+      <AppBar position="static">
+        <Toolbar>
+          <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }}>
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            Response Team Dashboard
+          </Typography>
+          {/* Logout Button */}
+          <Button
+            color="inherit"
+            startIcon={<LogoutIcon />}
+            onClick={logout} // Trigger the logout function
+          >
+            Logout
+          </Button>
+        </Toolbar>
+      </AppBar>
+
+      <Container sx={{ py: 4 }}>
+        <Typography variant="h4" align="center" gutterBottom>
+          Monitor Response Team
+        </Typography>
+
+        {/* Responsive Map */}
+        {currentPosition && (
+          <Box sx={{ height: { xs: '400px', md: '600px' }, width: '100%', mb: 4 }}>
+            <MapContainer center={currentPosition} zoom={13} style={{ height: '100%', width: '100%' }}>
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <Marker position={currentPosition} icon={vehicleIcon}>
+                <Popup>Your Location</Popup>
+              </Marker>
+              {confirmedReports.map((report, index) => (
+                <Marker key={index} position={[report.Latitude, report.Longitude]} icon={defaultMarkerIcon}>
+                  <Popup>
+                    <strong>Name:</strong> {report.Name} <br />
+                    <strong>Address:</strong> {report.Address} <br />
+                    <strong>Report:</strong> {report.EmergencyType || report.ComplaintType} <br />
+                    <Button variant="contained" onClick={() => getDirections([report.Latitude, report.Longitude])}>
+                      Get Directions
+                    </Button>
+                  </Popup>
+                </Marker>
+              ))}
+              {route.length > 0 && <Polyline positions={route} color="blue" />}
+            </MapContainer>
+          </Box>
+        )}
+      </Container>
+    </Box>
   );
 };
 
