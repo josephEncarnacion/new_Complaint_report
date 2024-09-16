@@ -8,10 +8,12 @@ import MapIcon from '@mui/icons-material/Map';
 import ReportIcon from '@mui/icons-material/Report';
 import CustomPaginationActions from '../components/CustomPaginationActions';
 import MapComponent from '../components/MapComponent';
+import { useAuth } from '../contexts/AuthContext'; 
 
 const drawerWidth = 240;
 
 const AdminPage = () => {
+  const { logout } = useAuth(); // Access logout function from AuthContext
   const [selectedSection, setSelectedSection] = useState('dashboard');
   const [complaints, setComplaints] = useState([]);
   const [emergencies, setEmergencies] = useState([]);
@@ -19,7 +21,7 @@ const AdminPage = () => {
   const [complaintRowsPerPage, setComplaintRowsPerPage] = useState(10);
   const [emergencyPage, setEmergencyPage] = useState(0);
   const [emergencyRowsPerPage, setEmergencyRowsPerPage] = useState(10);
-
+  
   useEffect(() => {
     if (selectedSection === 'complaints') {
       fetchComplaints(complaintPage, complaintRowsPerPage);
@@ -206,6 +208,7 @@ const AdminPage = () => {
             />
           </Container>
         );
+
       default:
         return <Typography variant="h4" align="center">Welcome to the Dashboard</Typography>;
     }
@@ -222,8 +225,10 @@ const AdminPage = () => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             Admin Dashboard
           </Typography>
+          <Button color="inherit" onClick={logout}>Logout</Button>
         </Toolbar>
       </AppBar>
+      
       <Drawer
         variant="permanent"
         sx={{

@@ -4,10 +4,12 @@ import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
 import ReportIcon from '@mui/icons-material/Report';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext'; // Import useAuth hook
 
 function Navbar() {
   const [openDrawer, setOpenDrawer] = useState(false);
   const isFullScreen = useMediaQuery('(max-width:600px)');
+  const { isAuthenticated, logout } = useAuth(); // Access authentication state and logout function
 
   const handleDrawerOpen = () => {
     setOpenDrawer(true);
@@ -15,6 +17,10 @@ function Navbar() {
 
   const handleDrawerClose = () => {
     setOpenDrawer(false);
+  };
+
+  const handleLogout = () => {
+    logout(); // Call the logout function from AuthContext
   };
 
   return (
@@ -43,6 +49,11 @@ function Navbar() {
                 <ReportIcon sx={{ mr: 1 }} />
                 Emergency Report
               </Button>
+              {isAuthenticated && (
+                <Button color="inherit" onClick={handleLogout}>
+                  Logout
+                </Button>
+              )}
             </>
           )}
         </Toolbar>
@@ -62,6 +73,11 @@ function Navbar() {
           <ListItem button component={Link} to="/EmergencyReport" onClick={handleDrawerClose}>
             <ListItemText primary="Emergency Report" />
           </ListItem>
+          {isAuthenticated && (
+            <ListItem button onClick={handleLogout}>
+              <ListItemText primary="Logout" />
+            </ListItem>
+          )}
         </List>
       </Drawer>
     </React.Fragment>
