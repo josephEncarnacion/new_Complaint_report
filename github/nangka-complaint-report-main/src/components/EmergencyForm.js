@@ -30,15 +30,24 @@ const EmergencyForm = () => {
   const mapRef = useRef();
   const apiKey = 'pk.0fa1d8fd6faab9f422d6c5e37c514ce1'; // Your LocationIQ API key
   const [file, setFile] = useState(null); // Media file (image or video)
-  const [fileUrl, setFileUrl] = useState(''); // URL of uploaded media
-  const [fileName, setFileName] = useState(''); // State to store the filename
-  const [uploading, setUploading] = useState(false); // State to track upload status
+  const [, setFileUrl] = useState(''); // URL of uploaded media
+  const [previewUrl, setPreviewUrl] = useState(''); // URL for local image preview
+  const [, setFileName] = useState(''); // State to store the filename
+  const [, setUploading] = useState(false); // State to track upload status
 
-  // Handle file selection
+  // Handle file selection and create a preview URL for images
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     setFile(selectedFile);
     setFileName(selectedFile ? selectedFile.name : '');
+
+    // Create a local preview URL if it's an image
+    if (selectedFile && (selectedFile.type.startsWith('image/'))) {
+      const preview = URL.createObjectURL(selectedFile);
+      setPreviewUrl(preview); // Set local image preview
+    } else {
+      setPreviewUrl(''); // Reset if not an image
+    }
   };
 
   // Custom Marker Icon
@@ -212,16 +221,12 @@ const EmergencyForm = () => {
           <input type="file" accept="image/*,video/*" onChange={handleFileChange} />
         </div>
 
-        {/* Display uploaded file preview and filename */}
-        {fileUrl && (
-          <div style={{ marginTop: '20px' }}>
-            <p>Uploaded file: <strong>{fileName}</strong></p>
-            {fileUrl.endsWith('.jpg') || fileUrl.endsWith('.jpeg') || fileUrl.endsWith('.png') ? (
-              <img src={fileUrl} alt={fileName} style={{ maxWidth: '400px', marginTop: '10px' }} />
-            ) : (
-              <a href={fileUrl} target="_blank" rel="noopener noreferrer">Download/view {fileName}</a>
-            )}
-          </div>
+        {/* Image Preview Before Submit */}
+        {previewUrl && (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="body1">Image Preview:</Typography>
+            <img src={previewUrl} alt="Selected file preview" style={{ maxWidth: '400px', marginTop: '10px' }} />
+          </Box>
         )}
 
         <Box marginTop={2}>
