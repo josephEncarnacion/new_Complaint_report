@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react'; 
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
@@ -13,6 +13,8 @@ import axios from 'axios';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage"; // Firebase Storage
+import { storage } from '../pages/firebase'; // Import Firebase Storage
 
 const EmergencyForm = () => {
   const [name, setName] = useState('');
@@ -26,8 +28,18 @@ const EmergencyForm = () => {
   const [location, setLocation] = useState({ lat: 14.6507, lng: 121.1029 }); // Marikina coordinates
   const [locationError, setLocationError] = useState(null);
   const mapRef = useRef();
-
   const apiKey = 'pk.0fa1d8fd6faab9f422d6c5e37c514ce1'; // Your LocationIQ API key
+  const [file, setFile] = useState(null); // Media file (image or video)
+  const [fileUrl, setFileUrl] = useState(''); // URL of uploaded media
+  const [fileName, setFileName] = useState(''); // State to store the filename
+  const [uploading, setUploading] = useState(false); // State to track upload status
+
+  // Handle file selection
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    setFile(selectedFile);
+    setFileName(selectedFile ? selectedFile.name : '');
+  };
 
   // Custom Marker Icon
   const markerIcon = new L.Icon({
@@ -36,10 +48,8 @@ const EmergencyForm = () => {
     shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
   });
 
-  const handleNameChange = (event) => {
-    setName(event.target.value);
-  };
-
+  const handleNameChange = (event) => setName(event.target.value);
+  
   const handleAddressChange = async (event) => {
     setAddress(event.target.value);
     if (event.target.value.length > 3) {
@@ -61,14 +71,10 @@ const EmergencyForm = () => {
     mapRef.current.flyTo([suggestion.lat, suggestion.lon], 15);
   };
 
-  const handleEmergencyTypeChange = (event) => {
-    setEmergencyType(event.target.value);
-  };
-
-  const handleEmergencyChange = (event) => {
-    setEmergencyText(event.target.value);
-  };
-
+  const handleEmergencyTypeChange = (event) => setEmergencyType(event.target.value);
+  
+  const handleEmergencyChange = (event) => setEmergencyText(event.target.value);
+  
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
       setLocationError('Geolocation is not supported by your browser');
@@ -86,13 +92,8 @@ const EmergencyForm = () => {
         try {
           const response = await axios.get(url);
           const data = response.data;
-          if (data && data.display_name) {
-            setAddress(data.display_name);
-          } else {
-            setAddress('Address not found');
-          }
+          setAddress(data?.display_name || 'Address not found');
         } catch (error) {
-          console.error('Error fetching address:', error);
           setAddress('Error fetching address');
         }
       },
@@ -102,189 +103,134 @@ const EmergencyForm = () => {
     );
   };
 
+  // Handle form submission with file upload
   const handleSubmit = async () => {
     try {
-      const formData = {
-        name,
-        address,
-        emergencyType,
-        emergencyText,
-        location,
-      };
+      if (!file) {
+        setSnackbarMessage('Please upload an image or video.');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+        return;
+      }
 
-      const response = await fetch('/submitEmergencyReport', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // Upload file to Firebase Storage
+      const storageRef = ref(storage, `media/${file.name}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          setUploading(true);
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log('Upload is ' + progress + '% done');
         },
-        body: JSON.stringify(formData),
-      });
+        (error) => {
+          setSnackbarMessage('Error uploading media.');
+          setSnackbarSeverity('error');
+          setSnackbarOpen(true);
+          setUploading(false);
+        },
+        async () => {
+          const mediaUrl = await getDownloadURL(uploadTask.snapshot.ref);
+          setFileUrl(mediaUrl); // Set the uploaded media URL
+          setUploading(false);
 
-      const data = await response.json();
-      setSnackbarMessage('Emergency report submitted successfully!');
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
+          // Submit form data with media URL
+          const formData = {
+            name,
+            address,
+            emergencyType,
+            emergencyText,
+            location,
+            mediaUrl, // Include the media URL
+          };
+
+          const response = await fetch('/submitEmergencyReport', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData),
+          });
+
+          const data = await response.json();
+          setSnackbarMessage(data.success ? 'Emergency report submitted successfully!' : 'Failed to submit emergency report.');
+          setSnackbarSeverity(data.success ? 'success' : 'error');
+          setSnackbarOpen(true);
+        }
+      );
     } catch (error) {
-      console.error('Error submitting emergency report:', error);
       setSnackbarMessage('Failed to submit emergency report.');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     }
   };
 
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false);
-  };
+  const handleSnackbarClose = () => setSnackbarOpen(false);
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        mt: 4,
-        px: { xs: 2, md: 4 },
-        maxWidth: '1200px',
-        margin: 'auto',
-      }}
-    >
-      <Box
-        sx={{
-          width: '100%',
-          padding: { xs: 2, md: 4 },
-          boxShadow: 2,
-          borderRadius: 4,
-          backgroundColor: 'background.paper',
-          textAlign: 'center',
-        }}
-      >
-        <Typography align="center" variant="h5" gutterBottom>
-          Emergency Form
-        </Typography>
-        <TextField
-          label="Name"
-          variant="outlined"
-          fullWidth
-          value={name}
-          onChange={handleNameChange}
-          margin="normal"
-          sx={{ mb: 2 }}
-        />
-        <TextField
-          label="Address"
-          variant="outlined"
-          fullWidth
-          value={address}
-          onChange={handleAddressChange}
-          margin="normal"
-          autoComplete="off"
-          sx={{ mb: 2 }}
-        />
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mt: 4, px: { xs: 2, md: 4 }, maxWidth: '1200px', margin: 'auto' }}>
+      <Box sx={{ width: '100%', padding: { xs: 2, md: 4 }, boxShadow: 2, borderRadius: 4, backgroundColor: 'background.paper', textAlign: 'center' }}>
+        <Typography align="center" variant="h5" gutterBottom>Emergency Form</Typography>
+
+        <TextField label="Name" variant="outlined" fullWidth value={name} onChange={handleNameChange} margin="normal" sx={{ mb: 2 }} />
+        <TextField label="Address" variant="outlined" fullWidth value={address} onChange={handleAddressChange} margin="normal" autoComplete="off" sx={{ mb: 2 }} />
+
         {addressSuggestions.length > 0 && (
-          <Box
-            sx={{
-              position: 'absolute',
-              zIndex: 1000,
-              backgroundColor: 'white',
-              border: '1px solid #ccc',
-              width: '100%',
-              maxWidth: '600px',
-              maxHeight: '200px',
-              overflowY: 'auto',
-            }}
-          >
+          <Box sx={{ position: 'absolute', zIndex: 1000, backgroundColor: 'white', border: '1px solid #ccc', width: '100%', maxWidth: '600px', maxHeight: '200px', overflowY: 'auto' }}>
             {addressSuggestions.map((suggestion, index) => (
-              <Box
-                key={index}
-                sx={{
-                  padding: 1,
-                  cursor: 'pointer',
-                  borderBottom: '1px solid #ccc',
-                  '&:hover': { backgroundColor: '#f0f0f0' },
-                }}
-                onClick={() => handleSelectSuggestion(suggestion)}
-              >
+              <Box key={index} sx={{ padding: 1, cursor: 'pointer', borderBottom: '1px solid #ccc', '&:hover': { backgroundColor: '#f0f0f0' } }} onClick={() => handleSelectSuggestion(suggestion)}>
                 {suggestion.display_name}
               </Box>
             ))}
           </Box>
         )}
+
         <Box marginTop={2} marginBottom={2}>
-          <Button variant="contained" color="primary" onClick={handleGetLocation}>
-            Get My Location
-          </Button>
-          {locationError && (
-            <Typography variant="body1" color="error" marginTop={2}>
-              {locationError}
-            </Typography>
-          )}
+          <Button variant="contained" color="primary" onClick={handleGetLocation}>Get My Location</Button>
+          {locationError && <Typography variant="body1" color="error" marginTop={2}>{locationError}</Typography>}
         </Box>
-        <Box
-          sx={{
-            height: { xs: '200px', md: '400px' },
-            mb: 2,
-            borderRadius: '8px',
-            overflow: 'hidden',
-          }}
-        >
-          <MapContainer
-            center={[location.lat, location.lng]}
-            zoom={13}
-            scrollWheelZoom={false}
-            style={{ height: '100%', width: '100%' }}
-            ref={mapRef}
-          >
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
+
+        <Box sx={{ height: { xs: '200px', md: '400px' }, mb: 2, borderRadius: '8px', overflow: 'hidden' }}>
+          <MapContainer center={[location.lat, location.lng]} zoom={13} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }} ref={mapRef}>
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' />
             <Marker position={[location.lat, location.lng]} icon={markerIcon} />
           </MapContainer>
         </Box>
 
         <FormControl fullWidth margin="normal" variant="outlined" sx={{ mb: 2 }}>
           <InputLabel id="complaint-type-label">Emergency Type</InputLabel>
-          <Select
-            labelId="complaint-type-label"
-            id="complaint-type"
-            value={emergencyType}
-            onChange={handleEmergencyTypeChange}
-            label="Emergency Type"
-          >
+          <Select labelId="complaint-type-label" id="complaint-type" value={emergencyType} onChange={handleEmergencyTypeChange} label="Emergency Type">
             <MenuItem value="Earthquake">Earthquake</MenuItem>
             <MenuItem value="Fire">Fire</MenuItem>
             <MenuItem value="Flood">Flood</MenuItem>
             <MenuItem value="Medical Emergencies">Medical Emergencies</MenuItem>
           </Select>
         </FormControl>
-        <TextField
-          label="Enter your Emergency"
-          multiline
-          rows={4}
-          variant="outlined"
-          fullWidth
-          value={emergencyText}
-          onChange={handleEmergencyChange}
-          margin="normal"
-          sx={{ mb: 2 }}
-        />
+
+        <TextField label="Enter your Emergency" multiline rows={4} variant="outlined" fullWidth value={emergencyText} onChange={handleEmergencyChange} margin="normal" sx={{ mb: 2 }} />
+
+        <div>
+          <input type="file" accept="image/*,video/*" onChange={handleFileChange} />
+        </div>
+
+        {/* Display uploaded file preview and filename */}
+        {fileUrl && (
+          <div style={{ marginTop: '20px' }}>
+            <p>Uploaded file: <strong>{fileName}</strong></p>
+            {fileUrl.endsWith('.jpg') || fileUrl.endsWith('.jpeg') || fileUrl.endsWith('.png') ? (
+              <img src={fileUrl} alt={fileName} style={{ maxWidth: '400px', marginTop: '10px' }} />
+            ) : (
+              <a href={fileUrl} target="_blank" rel="noopener noreferrer">Download/view {fileName}</a>
+            )}
+          </div>
+        )}
 
         <Box marginTop={2}>
-          <Button variant="contained" color="primary" onClick={handleSubmit}>
-            Submit Report
-          </Button>
+          <Button variant="contained" color="primary" onClick={handleSubmit}>Submit Report</Button>
         </Box>
       </Box>
 
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
-      >
-        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
-          {snackbarMessage}
-        </Alert>
+      <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleSnackbarClose}>
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>{snackbarMessage}</Alert>
       </Snackbar>
     </Box>
   );

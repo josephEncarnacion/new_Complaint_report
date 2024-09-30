@@ -10,6 +10,31 @@ app.use(cors());
 
 const { getConfirmedComplaints, getConfirmedEmergencies } = require('./dbfiles/dbOperation');
 
+
+    const WebSocket = require('ws');
+    const wss = new WebSocket.Server({ port: 8080 });
+
+    wss.on('connection', (ws) => {
+    console.log('A new client connected');
+
+    ws.on('message', (message) => {
+        console.log(`Received message: ${message}`);
+
+        // Broadcast the message to all connected clients
+        wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(message);
+        }
+        });
+    });
+
+    ws.on('close', () => {
+        console.log('Client disconnected');
+    });
+    });
+
+    console.log('WebSocket server running on ws://localhost:8080');
+
 app.get('/api/confirmedReports', async (req, res) => {
     try {
         const confirmedComplaints = await getConfirmedComplaints();
@@ -60,19 +85,19 @@ app.post('/submitComplaint', async (req, res) => {
       res.status(500).json({ success: false, message: 'Failed to submit emergency report.' });
   }
 });
-
 app.post('/submitEmergencyReport', async (req, res) => {
-  const { name, address, emergencyType, emergencyText, location } = req.body;
-  const { lat, lng } = location; // Extract latitude and longitude from location object
-  try {
-      await dbOperation.insertEmergencyReport(name, address, emergencyType, emergencyText, lat, lng);
-      res.status(200).json({ success: true, message: 'Emergency report submitted successfully.' });
-  } catch (error) {
-      console.error('Error submitting emergency report:', error);
-      res.status(500).json({ success: false, message: 'Failed to submit emergency report.' });
-  }
-});
-
+    const { name, address, emergencyType, emergencyText, location, mediaUrl } = req.body; // Add mediaUrl
+    const { lat, lng } = location;
+    try {
+        await dbOperation.insertEmergencyReport(name, address, emergencyType, emergencyText, lat, lng, mediaUrl); // Include mediaUrl
+        res.status(200).json({ success: true, message: 'Emergency report submitted successfully.' });
+    } catch (error) {
+        console.error('Error submitting emergency report:', error);
+        res.status(500).json({ success: false, message: 'Failed to submit emergency report.' });
+    }
+  });
+  
+  
 
 app.get('/login', (req, res) => {
     res.sendFile(__dirname + '/login.js');
@@ -155,7 +180,7 @@ app.post('/complaints/confirm/:name', async (req, res) => {
 app.post('/emergencies/confirm/:name', async (req, res) => {
   const { name } = req.params;
   try {
-      await dbOperation.confirmEmergencyByName(name);
+      await dbOperation.confirmEmergencyByName(name);   
       res.status(200).json({ success: true, message: 'Emergency confirmed successfully.' });
   } catch (error) {
       console.error('Error confirming emergency:', error);

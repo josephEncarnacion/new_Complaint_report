@@ -23,12 +23,12 @@ const insertComplaint = async (name, address, complaintType, complaintText, lati
         throw error;
     }
 };
-const insertEmergencyReport = async (name, address, emergencyType, emergencyText, latitude, longitude) => {
+const insertEmergencyReport = async (name, address, emergencyType, emergencyText, latitude, longitude, mediaUrl) => {
     try {
         let pool = await sql.connect(config);
         const query = `
-            INSERT INTO Emergency_tbl (Name, Address, EmergencyType, EmergencyText, Latitude, Longitude)
-            VALUES (@name, @address, @emergencyType, @emergencyText, @latitude, @longitude)
+            INSERT INTO Emergency_tbl (Name, Address, EmergencyType, EmergencyText, Latitude, Longitude, MediaUrl)
+            VALUES (@name, @address, @emergencyType, @emergencyText, @latitude, @longitude, @mediaUrl)
         `;
         await pool.request()
             .input('name', sql.VarChar, name)
@@ -37,13 +37,15 @@ const insertEmergencyReport = async (name, address, emergencyType, emergencyText
             .input('emergencyText', sql.VarChar, emergencyText)
             .input('latitude', sql.Float, latitude)
             .input('longitude', sql.Float, longitude)
+            .input('mediaUrl', sql.VarChar, mediaUrl) // Store the media URL
             .query(query);
         console.log('Emergency report inserted successfully.');
     } catch (error) {
         console.error('Error inserting emergency report:', error);
         throw error;
     }
-};
+  };
+  
 async function getUserByUsername(username) {
     try {
         let pool = await sql.connect(config);

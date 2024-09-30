@@ -1,15 +1,51 @@
-import React, { useState } from 'react';
-import { AppBar, Toolbar, Typography, Button, IconButton, Drawer, List, ListItem, ListItemText, useMediaQuery } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { AppBar, Toolbar, Typography, Button, IconButton, Drawer, List, ListItem, ListItemText, Badge, Menu, MenuItem, useMediaQuery } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
 import ReportIcon from '@mui/icons-material/Report';
+import NotificationsIcon from '@mui/icons-material/Notifications';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; // Import useAuth hook
+import { useAuth } from '../contexts/AuthContext';
 
 function Navbar() {
   const [openDrawer, setOpenDrawer] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [anchorEl, setAnchorEl] = useState(null);
   const isFullScreen = useMediaQuery('(max-width:600px)');
-  const { isAuthenticated, logout } = useAuth(); // Access authentication state and logout function
+  const { isAuthenticated, logout } = useAuth();
+  const [ws, setWs] = useState(null); // WebSocket state
+
+  useEffect(() => {
+    // Connect to WebSocket server
+    const socket = new WebSocket('ws://localhost:8080');
+
+    socket.onopen = () => {
+      console.log('Connected to WebSocket server');
+    };
+
+    socket.onmessage = (event) => {
+      const message = event.data;
+
+      // Add new notification
+      setNotifications((prevNotifications) => [
+        ...prevNotifications,
+        { id: prevNotifications.length + 1, message },
+      ]);
+    };
+
+    socket.onclose = () => {
+      console.log('Disconnected from WebSocket server');
+    };
+
+    setWs(socket);
+
+    // Cleanup on component unmount
+    return () => {
+      if (ws) {
+        ws.close();
+      }
+    };
+  }, []);
 
   const handleDrawerOpen = () => {
     setOpenDrawer(true);
@@ -20,7 +56,20 @@ function Navbar() {
   };
 
   const handleLogout = () => {
-    logout(); // Call the logout function from AuthContext
+    logout();
+  };
+
+  const handleNotificationClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleNotificationClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleClearNotifications = () => {
+    setNotifications([]); // Clear all notifications when needed
+    handleNotificationClose();
   };
 
   return (
@@ -49,6 +98,25 @@ function Navbar() {
                 <ReportIcon sx={{ mr: 1 }} />
                 Emergency Report
               </Button>
+              <IconButton color="inherit" onClick={handleNotificationClick}>
+                <Badge badgeContent={notifications.length} color="secondary">
+                  <NotificationsIcon />
+                </Badge>
+              </IconButton>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleNotificationClose}
+              >
+                {notifications.length === 0 ? (
+                  <MenuItem>No new notifications</MenuItem>
+                ) : (
+                  notifications.map((notification) => (
+                    <MenuItem key={notification.id}>{notification.message}</MenuItem>
+                  ))
+                )}
+                <MenuItem onClick={handleClearNotifications}>Clear all</MenuItem>
+              </Menu>
               {isAuthenticated && (
                 <Button color="inherit" onClick={handleLogout}>
                   Logout
