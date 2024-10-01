@@ -64,14 +64,15 @@ app.get('/complaints', async (req, res) => {
 });
 
 app.get('/emergencies', async (req, res) => {
-  const { page = 1, pageSize = 10 } = req.query;
-  try {
-      const emergencies = await getPaginatedEmergencies(parseInt(page), parseInt(pageSize));
-      res.json(emergencies);
-  } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch emergencies' });
-  }
-});
+    const { page = 1, pageSize = 10 } = req.query;
+    try {
+        const emergencies = await dbOperation.getPaginatedEmergencies(parseInt(page), parseInt(pageSize));
+        res.json(emergencies); // Make sure mediaUrl is included in the response
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch emergencies' });
+    }
+  });
+  
 
 // Route to handle form submission
 app.post('/submitComplaint', async (req, res) => {

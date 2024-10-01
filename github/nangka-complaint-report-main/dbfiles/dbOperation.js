@@ -97,9 +97,11 @@ const getPaginatedEmergencies = async (page, pageSize) => {
     try {
         let pool = await sql.connect(config);
         const query = `
-            SELECT *
-            FROM Emergency_tbl;
-        `;
+            SELECT Name, Address, EmergencyType, EmergencyText, Latitude, Longitude, MediaUrl
+            FROM Emergency_tbl
+            ORDER BY Name
+            OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
+        `; // Retrieve MediaUrl along with other fields
         const result = await pool.request()
             .input('offset', sql.Int, (page - 1) * pageSize)
             .input('pageSize', sql.Int, pageSize)
@@ -110,6 +112,7 @@ const getPaginatedEmergencies = async (page, pageSize) => {
         throw error;
     }
 };
+
 
 // Delete complaint by name
 const deleteComplaintByName = async (name) => {
@@ -178,7 +181,7 @@ const confirmEmergencyByName = async (name) => {
     try {
         let pool = await sql.connect(config);
 
-        // Select the emergency to be confirmed
+        // Select the emergency to be confirmed, including MediaUrl
         let emergencyResult = await pool.request()
             .input('name', sql.VarChar, name)
             .query('SELECT * FROM Emergency_tbl WHERE Name = @name');
@@ -186,7 +189,7 @@ const confirmEmergencyByName = async (name) => {
         if (emergencyResult.recordset.length > 0) {
             const emergency = emergencyResult.recordset[0];
 
-            // Insert the emergency into ConfirmedEmergency_tbl
+            // Insert the emergency, including MediaUrl, into ConfirmedEmergency_tbl
             await pool.request()
                 .input('name', sql.VarChar, emergency.Name)
                 .input('address', sql.VarChar, emergency.Address)
@@ -194,19 +197,25 @@ const confirmEmergencyByName = async (name) => {
                 .input('emergencyText', sql.Text, emergency.EmergencyText)
                 .input('latitude', sql.Float, emergency.Latitude)
                 .input('longitude', sql.Float, emergency.Longitude)
-                .query(`INSERT INTO ConfirmedEmergency_tbl (Name, Address, EmergencyType, EmergencyText, Latitude, Longitude) 
-                        VALUES (@name, @address, @emergencyType, @emergencyText, @latitude, @longitude)`);
+                .input('mediaUrl', sql.VarChar, emergency.MediaUrl)  // Make sure MediaUrl is passed
+                .query(`
+                    INSERT INTO ConfirmedEmergency_tbl (Name, Address, EmergencyType, EmergencyText, Latitude, Longitude, MediaUrl) 
+                    VALUES (@name, @address, @emergencyType, @emergencyText, @latitude, @longitude, @mediaUrl)
+                `);
 
             // Delete the emergency from Emergency_tbl
             await pool.request()
                 .input('name', sql.VarChar, name)
                 .query('DELETE FROM Emergency_tbl WHERE Name = @name');
+        } else {
+            throw new Error(`Emergency with name ${name} not found.`);
         }
     } catch (error) {
         console.error('Error confirming emergency:', error);
         throw error;
     }
 };
+
 const getConfirmedComplaints = async () => {
     try {
         let pool = await sql.connect(config);
@@ -218,11 +227,10 @@ const getConfirmedComplaints = async () => {
         throw error;
     }
 };
-
 const getConfirmedEmergencies = async () => {
     try {
         let pool = await sql.connect(config);
-        const query = 'SELECT * FROM ConfirmedEmergency_tbl';
+        const query = 'SELECT Name, Address, EmergencyType, EmergencyText, Latitude, Longitude, MediaUrl FROM ConfirmedEmergency_tbl';
         const result = await pool.request().query(query);
         return result.recordset;
     } catch (error) {
@@ -230,6 +238,7 @@ const getConfirmedEmergencies = async () => {
         throw error;
     }
 };
+
 
    
 

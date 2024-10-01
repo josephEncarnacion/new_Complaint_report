@@ -160,6 +160,7 @@ const AdminPage = () => {
                       <TableCell>{complaint.Address}</TableCell>
                       <TableCell>{complaint.ComplaintType}</TableCell>
                       <TableCell>{complaint.ComplaintText}</TableCell>
+                      
                       <TableCell>
                         <Button onClick={() => handleConfirmComplaint(complaint.Name)} color="primary">Dispatch</Button>
                         <Button onClick={() => handleDeleteComplaint(complaint.Name)} color="secondary">Delete</Button>
@@ -194,6 +195,7 @@ const AdminPage = () => {
                     <TableCell>Address</TableCell>
                     <TableCell>Type</TableCell>
                     <TableCell>Description</TableCell>
+                    <TableCell>Media</TableCell>
                     <TableCell>Actions</TableCell>
                   </TableRow>
                 </TableHead>
@@ -204,6 +206,17 @@ const AdminPage = () => {
                       <TableCell>{emergency.Address}</TableCell>
                       <TableCell>{emergency.EmergencyType}</TableCell>
                       <TableCell>{emergency.EmergencyText}</TableCell>
+                      <TableCell>
+                  {emergency.MediaUrl ? (
+                    emergency.MediaUrl.endsWith('.jpg') || emergency.MediaUrl.endsWith('.jpeg') || emergency.MediaUrl.endsWith('.png') ? (
+                      <img src={emergency.MediaUrl} alt="Emergency Media" style={{ maxWidth: '100px' }} />
+                    ) : (
+                      <a href={emergency.MediaUrl} target="_blank" rel="noopener noreferrer">View Media Upload</a>
+                    )
+                  ) : (
+                    'No media attached'
+                  )}
+                </TableCell>
                       <TableCell>
                         <Button onClick={() => handleConfirmEmergency(emergency.Name)} color="primary">Dispatch</Button>
                         <Button onClick={() => handleDeleteEmergency(emergency.Name)} color="secondary">Delete</Button>
