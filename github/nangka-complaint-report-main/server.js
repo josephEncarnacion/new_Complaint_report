@@ -179,7 +179,7 @@ app.post('/complaints/confirm/:name', async (req, res) => {
 });
 
 app.post('/emergencies/confirm/:name', async (req, res) => {
-  const { name } = req.params;
+  const { name } = req.params; 
   try {
       await dbOperation.confirmEmergencyByName(name);   
       res.status(200).json({ success: true, message: 'Emergency confirmed successfully.' });
