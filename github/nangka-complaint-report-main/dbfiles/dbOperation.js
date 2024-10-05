@@ -158,6 +158,8 @@ const confirmComplaintByName = async (name) => {
         if (complaintResult.recordset.length > 0) {
             const complaint = complaintResult.recordset[0];
 
+            const mediaUrl = complaint.MediaURL || null;
+
             // Insert the complaint into ConfirmedComplaint_tbl
             await pool.request()
                 .input('name', sql.VarChar, complaint.Name)
@@ -168,7 +170,8 @@ const confirmComplaintByName = async (name) => {
                 .input('longitude', sql.Float, complaint.Longitude)
                 .input('mediaUrl', sql.VarChar, mediaUrl)
 
-                .query(`INSERT INTO ConfirmedComplaint_tbl (Name, Address, ComplaintType, ComplaintText, Latitude, Longitude, MediaURL) 
+                .query(`INSERT INTO ConfirmedComplaint_tbl 
+                        (Name, Address, ComplaintType, ComplaintText, Latitude, Longitude, MediaURL) 
                         VALUES (@name, @address, @complaintType, @complaintText, @latitude, @longitude, @mediaUrl)`);
 
             // Delete the complaint from Complaint_tbl
