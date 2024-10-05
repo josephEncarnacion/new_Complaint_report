@@ -28,12 +28,12 @@ const EmergencyForm = () => {
   const [location, setLocation] = useState({ lat: 14.6507, lng: 121.1029 }); // Marikina coordinates
   const [locationError, setLocationError] = useState(null);
   const mapRef = useRef();
-  const apiKey = 'pk.0fa1d8fd6faab9f422d6c5e37c514ce1'; // Your LocationIQ API key
-  const [file, setFile] = useState(null); // Media file (image or video)
-  const [, setFileUrl] = useState(''); // URL of uploaded media
-  const [previewUrl, setPreviewUrl] = useState(''); // URL for local image preview
-  const [, setFileName] = useState(''); // State to store the filename
-  const [, setUploading] = useState(false); // State to track upload status
+  const apiKey = 'pk.0fa1d8fd6faab9f422d6c5e37c514ce1'; 
+  const [file, setFile] = useState(null); 
+  const [, setFileUrl] = useState(''); 
+  const [previewUrl, setPreviewUrl] = useState(''); 
+  const [, setFileName] = useState(''); 
+  const [, setUploading] = useState(false); 
 
   // Handle file selection and create a preview URL for images
   const handleFileChange = (e) => {

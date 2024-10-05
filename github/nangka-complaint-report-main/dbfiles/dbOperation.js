@@ -181,7 +181,7 @@ const confirmEmergencyByName = async (name) => {
     try {
         let pool = await sql.connect(config);
 
-        // Select the emergency to be confirmed, including MediaUrl
+        // Select the emergency to be confirmed
         let emergencyResult = await pool.request()
             .input('name', sql.VarChar, name)
             .query('SELECT * FROM Emergency_tbl WHERE Name = @name');
@@ -189,7 +189,10 @@ const confirmEmergencyByName = async (name) => {
         if (emergencyResult.recordset.length > 0) {
             const emergency = emergencyResult.recordset[0];
 
-            // Insert the emergency, including MediaUrl, into ConfirmedEmergency_tbl
+            // Get MediaURL or null if undefined
+            const mediaUrl = emergency.MediaURL || null;
+
+            // Insert the emergency into ConfirmedEmergency_tbl
             await pool.request()
                 .input('name', sql.VarChar, emergency.Name)
                 .input('address', sql.VarChar, emergency.Address)
@@ -197,10 +200,12 @@ const confirmEmergencyByName = async (name) => {
                 .input('emergencyText', sql.Text, emergency.EmergencyText)
                 .input('latitude', sql.Float, emergency.Latitude)
                 .input('longitude', sql.Float, emergency.Longitude)
-                .input('mediaUrl', sql.VarChar, emergency.MediaUrl)  // Make sure MediaUrl is passed
+                .input('mediaUrl', sql.VarChar, mediaUrl)
                 .query(`
-                    INSERT INTO ConfirmedEmergency_tbl (Name, Address, EmergencyType, EmergencyText, Latitude, Longitude, MediaUrl) 
-                    VALUES (@name, @address, @emergencyType, @emergencyText, @latitude, @longitude, @mediaUrl)
+                    INSERT INTO ConfirmedEmergency_tbl 
+                    (Name, Address, EmergencyType, EmergencyText, Latitude, Longitude, MediaURL) 
+                    VALUES 
+                    (@name, @address, @emergencyType, @emergencyText, @latitude, @longitude, @mediaUrl)
                 `);
 
             // Delete the emergency from Emergency_tbl
@@ -215,6 +220,9 @@ const confirmEmergencyByName = async (name) => {
         throw error;
     }
 };
+
+
+
 
 const getConfirmedComplaints = async () => {
     try {
