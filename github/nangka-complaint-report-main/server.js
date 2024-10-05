@@ -76,14 +76,14 @@ app.get('/emergencies', async (req, res) => {
 
 // Route to handle form submission
 app.post('/submitComplaint', async (req, res) => {
-    const { name, address, complaintType, complaintText,location } = req.body;
+    const { name, address, complaintType, complaintText,location, mediaUrl } = req.body;
     const { lat, lng } = location; // Extract latitude and longitude from location object
     try {
-      await dbOperation.insertComplaint(name, address, complaintType, complaintText , lat, lng);
-      res.status(200).json({ success: true, message: 'Emergency report submitted successfully.' });
+      await dbOperation.insertComplaint(name, address, complaintType, complaintText , lat, lng, mediaUrl);
+      res.status(200).json({ success: true, message: 'Complaint report submitted successfully.' });
   } catch (error) {
-      console.error('Error submitting emergency report:', error);
-      res.status(500).json({ success: false, message: 'Failed to submit emergency report.' });
+      console.error('Error submitting Complaint report:', error);
+      res.status(500).json({ success: false, message: 'Failed to submit Complaint report.' });
   }
 });
 app.post('/submitEmergencyReport', async (req, res) => {

@@ -150,6 +150,7 @@ const AdminPage = () => {
                     <TableCell>Address</TableCell>
                     <TableCell>Type</TableCell>
                     <TableCell>Description</TableCell>
+                    <TableCell>Media Upload</TableCell>
                     <TableCell>Actions</TableCell>
                   </TableRow>
                 </TableHead>
@@ -160,7 +161,17 @@ const AdminPage = () => {
                       <TableCell>{complaint.Address}</TableCell>
                       <TableCell>{complaint.ComplaintType}</TableCell>
                       <TableCell>{complaint.ComplaintText}</TableCell>
-                      
+                      <TableCell>
+                  {complaint.MediaUrl ? (
+                    complaint.MediaUrl.endsWith('.jpg') || complaint.MediaUrl.endsWith('.jpeg') || complaint.MediaUrl.endsWith('.png') ? (
+                      <img src={complaint.MediaUrl} alt="complaint Media" style={{ maxWidth: '100px' }} />
+                    ) : (
+                      <a href={complaint.MediaUrl} target="_blank" rel="noopener noreferrer">View Media Upload</a>
+                    )
+                  ) : (
+                    'No media attached'
+                  )}
+                </TableCell>
                       <TableCell>
                         <Button onClick={() => handleConfirmComplaint(complaint.Name)} color="primary">Dispatch</Button>
                         <Button onClick={() => handleDeleteComplaint(complaint.Name)} color="secondary">Delete</Button>

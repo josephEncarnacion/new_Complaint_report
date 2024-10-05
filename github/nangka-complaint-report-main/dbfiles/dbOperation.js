@@ -2,12 +2,12 @@ const config = require('./dbConfig');
 const sql = require('mssql');
 
 
-const insertComplaint = async (name, address, complaintType, complaintText, latitude, longitude) => {
+const insertComplaint = async (name, address, complaintType, complaintText, latitude, longitude, mediaUrl) => {
     try {
         let pool = await sql.connect(config);
         const query = `
-            INSERT INTO Complaint_tbl (Name, Address, ComplaintType, ComplaintText, Latitude, Longitude)
-            VALUES (@name, @address, @complaintType, @complaintText, @latitude, @longitude)
+            INSERT INTO Complaint_tbl (Name, Address, ComplaintType, ComplaintText, Latitude, Longitude, MediaUrl)
+            VALUES (@name, @address, @complaintType, @complaintText, @latitude, @longitude, @mediaUrl)
         `;
         await pool.request()
             .input('name', sql.VarChar, name)
@@ -16,6 +16,7 @@ const insertComplaint = async (name, address, complaintType, complaintText, lati
             .input('complaintText', sql.VarChar, complaintText)
             .input('latitude', sql.Float, latitude)
             .input('longitude', sql.Float, longitude)
+            .input('mediaUrl', sql.VarChar, mediaUrl) // Store the media URL
             .query(query);
         console.log('Complaint inserted successfully.');
     } catch (error) {
@@ -79,8 +80,10 @@ const getPaginatedComplaints = async (page, pageSize) => {
     try {
         let pool = await sql.connect(config);
         const query = `
-            SELECT *
-            FROM Complaint_tbl;
+            SELECT Name, Address, ComplaintType, ComplaintText, Latitude, Longitude, MediaUrl
+            FROM Complaint_tbl
+            ORDER BY Name
+            OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
         `;
         const result = await pool.request()
             .input('offset', sql.Int, (page - 1) * pageSize)
@@ -163,8 +166,10 @@ const confirmComplaintByName = async (name) => {
                 .input('complaintText', sql.Text, complaint.ComplaintText)
                 .input('latitude', sql.Float, complaint.Latitude)
                 .input('longitude', sql.Float, complaint.Longitude)
-                .query(`INSERT INTO ConfirmedComplaint_tbl (Name, Address, ComplaintType, ComplaintText, Latitude, Longitude) 
-                        VALUES (@name, @address, @complaintType, @complaintText, @latitude, @longitude)`);
+                .input('mediaUrl', sql.VarChar, mediaUrl)
+
+                .query(`INSERT INTO ConfirmedComplaint_tbl (Name, Address, ComplaintType, ComplaintText, Latitude, Longitude, MediaURL) 
+                        VALUES (@name, @address, @complaintType, @complaintText, @latitude, @longitude, @mediaUrl)`);
 
             // Delete the complaint from Complaint_tbl
             await pool.request()

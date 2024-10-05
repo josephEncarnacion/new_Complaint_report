@@ -13,6 +13,8 @@ import axios from 'axios';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage"; // Firebase Storage
+import { storage } from '../pages/firebase';
 
 const ComplaintForm = () => {
   const [name, setName] = useState('');
@@ -26,8 +28,28 @@ const ComplaintForm = () => {
   const [location, setLocation] = useState({ lat: 14.6507, lng: 121.1029 }); // Marikina coordinates
   const [locationError, setLocationError] = useState(null);
   const mapRef = useRef();
-
   const apiKey = 'pk.0fa1d8fd6faab9f422d6c5e37c514ce1'; // Your LocationIQ API key
+  const [file, setFile] = useState(null); 
+  const [, setFileUrl] = useState(''); 
+  const [previewUrl, setPreviewUrl] = useState(''); 
+  const [, setFileName] = useState(''); 
+  const [, setUploading] = useState(false); 
+
+  // Handle file selection and create a preview URL for images
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    setFile(selectedFile);
+    setFileName(selectedFile ? selectedFile.name : '');
+
+    // Create a local preview URL if it's an image
+    if (selectedFile && (selectedFile.type.startsWith('image/'))) {
+      const preview = URL.createObjectURL(selectedFile);
+      setPreviewUrl(preview); // Set local image preview
+    } else {
+      setPreviewUrl(''); // Reset if not an image
+    }
+  };
+
 
   // Custom Marker Icon
   const markerIcon = new L.Icon({
@@ -108,12 +130,43 @@ const ComplaintForm = () => {
 
   const handleSubmit = async () => {
     try {
+      if (!file) {
+        setSnackbarMessage('Please upload an image or video.');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+        return;
+      }
+
+      // Upload file to Firebase Storage
+      const storageRef = ref(storage, `media/${file.name}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          setUploading(true);
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log('Upload is ' + progress + '% done');
+        },
+        (error) => {
+          setSnackbarMessage('Error uploading media.');
+          setSnackbarSeverity('error');
+          setSnackbarOpen(true);
+          setUploading(false);
+        },
+        async () => {
+          const mediaUrl = await getDownloadURL(uploadTask.snapshot.ref);
+          setFileUrl(mediaUrl); // Set the uploaded media URL
+          setUploading(false);
+
+          // Submit form data with media URL
       const formData = {
         name,
         address,
         complaintType,
         complaintText,
         location,
+        mediaUrl, // Include the media URL
       };
 
       const response = await fetch('/submitComplaint', {
@@ -125,9 +178,11 @@ const ComplaintForm = () => {
       });
 
       const data = await response.json();
-      setSnackbarMessage('Complaint submitted successfully!');
-      setSnackbarSeverity('success');
+      setSnackbarMessage(data.success ? 'Complaint report submitted successfully!' : 'Failed to submit complaint report.');
+      setSnackbarSeverity(data.success ? 'success' : 'error');
       setSnackbarOpen(true);
+    }
+  );
     } catch (error) {
       console.error('Error submitting complaint:', error);
       setSnackbarMessage('Failed to submit complaint.');
@@ -275,6 +330,19 @@ const ComplaintForm = () => {
           rows={4}
           sx={{ mb: 2 }}
         />
+
+        
+        <div>
+          <input type="file" accept="image/*,video/*" onChange={handleFileChange} />
+        </div>
+
+        {/* Image Preview Before Submit */}
+        {previewUrl && (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="body1">Image Preview:</Typography>
+            <img src={previewUrl} alt="Selected file preview" style={{ maxWidth: '400px', marginTop: '10px' }} />
+          </Box>
+        )}
 
         <Button variant="contained" color="primary" onClick={handleSubmit}>
           Submit
