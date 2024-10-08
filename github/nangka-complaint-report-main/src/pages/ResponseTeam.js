@@ -137,7 +137,7 @@ const ResponseTeam = () => {
                       report.MediaUrl.endsWith('.jpg') || report.MediaUrl.endsWith('.jpeg') || report.MediaUrl.endsWith('.png') ? (
                         <img src={report.MediaUrl} alt="Emergency Media" style={{ maxWidth: '100px' }} />
                       ) : (
-                        <a href={report.MediaUrl} target="_blank" rel="noopener noreferrer">Download/View Video</a>
+                        <a href={report.MediaUrl} target="_blank" rel="noopener noreferrer">View Meida</a>
                       )
                     ) : (
                       'No media attached'

@@ -21,6 +21,8 @@ function Login() {
       });
       const data = await response.json();
       if (data.success) {
+        // Save to localStorage and login
+        localStorage.setItem('authData', JSON.stringify({ role: data.role }));
         login(data.role);
         if (data.role === 'Admin') {
           navigate('/admin');
