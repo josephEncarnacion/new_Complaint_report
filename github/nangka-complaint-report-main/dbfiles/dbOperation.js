@@ -235,7 +235,7 @@ const confirmEmergencyByName = async (name) => {
 const getConfirmedComplaints = async () => {
     try {
         let pool = await sql.connect(config);
-        const query = 'SELECT * FROM ConfirmedComplaint_tbl';
+        const query = 'SELECT Name, Address, ComplaintType, ComplaintText, Latitude, Longitude, MediaUrl FROM ConfirmedComplaint_tbl';
         const result = await pool.request().query(query);
         return result.recordset;
     } catch (error) {

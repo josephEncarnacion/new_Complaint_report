@@ -131,7 +131,7 @@ const ResponseTeam = () => {
                     <strong>Name:</strong> {report.Name} <br />
                     <strong>Address:</strong> {report.Address} <br />
                     <strong>Report:</strong> {report.EmergencyType || report.ComplaintType} <br />
-
+                    
                     {/* Display the media (image or video) */}
                     {report.MediaUrl ? (
                       report.MediaUrl.endsWith('.jpg') || report.MediaUrl.endsWith('.jpeg') || report.MediaUrl.endsWith('.png') ? (

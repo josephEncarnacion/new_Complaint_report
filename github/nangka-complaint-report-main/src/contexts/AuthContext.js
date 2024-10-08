@@ -8,10 +8,9 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [role, setRole] = useState('');
-  const [loading, setLoading] = useState(true);  // Loading state for auth check
+  const [loading, setLoading] = useState(true);  
 
   useEffect(() => {
-    // Function to load authentication state from sessionStorage
     const loadAuthFromStorage = () => {
       const storedAuthData = JSON.parse(sessionStorage.getItem('authData'));
       
@@ -19,19 +18,18 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(true);
         setRole(storedAuthData.role);
       } else {
-        setIsAuthenticated(false);  // No auth data found, ensure logged out state
+        setIsAuthenticated(false); 
         setRole('');
       }
       
-      setLoading(false);  // Auth check completed, stop loading
+      setLoading(false);  
     };
 
-    loadAuthFromStorage();  // Load authentication data initially
+    loadAuthFromStorage();  
 
-    // Listen for changes in sessionStorage to sync across tabs
     window.addEventListener('storage', loadAuthFromStorage);
 
-    // Cleanup the event listener when component unmounts
+    
     return () => {
       window.removeEventListener('storage', loadAuthFromStorage);
     };
