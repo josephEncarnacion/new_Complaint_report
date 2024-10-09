@@ -9,6 +9,7 @@ import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
+import LinearProgress from '@mui/material/LinearProgress'; // Progress bar
 import axios from 'axios';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
@@ -30,10 +31,11 @@ const EmergencyForm = () => {
   const mapRef = useRef();
   const apiKey = 'pk.0fa1d8fd6faab9f422d6c5e37c514ce1'; 
   const [file, setFile] = useState(null); 
-  const [, setFileUrl] = useState(''); 
+  const [fileUrl, setFileUrl] = useState(''); 
   const [previewUrl, setPreviewUrl] = useState(''); 
-  const [, setFileName] = useState(''); 
-  const [, setUploading] = useState(false); 
+  const [fileName, setFileName] = useState(''); 
+  const [uploading, setUploading] = useState(false); 
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Handle file selection and create a preview URL for images
   const handleFileChange = (e) => {
@@ -42,19 +44,23 @@ const EmergencyForm = () => {
     setFileName(selectedFile ? selectedFile.name : '');
 
     // Create a local preview URL if it's an image
-    if (selectedFile && (selectedFile.type.startsWith('image/'))) {
+    if (selectedFile && (selectedFile.type.startsWith('image/') || selectedFile.type.startsWith('video/'))) {
       const preview = URL.createObjectURL(selectedFile);
-      setPreviewUrl(preview); // Set local image preview
+      setPreviewUrl(preview); // Set local image or video preview
     } else {
-      setPreviewUrl(''); // Reset if not an image
+      setPreviewUrl(''); // Reset if not an image or video
     }
   };
 
   // Custom Marker Icon
   const markerIcon = new L.Icon({
-    iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-    iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    tooltipAnchor: [16, -28],
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+    shadowSize: [41, 41],
   });
 
   const handleNameChange = (event) => setName(event.target.value);
@@ -131,7 +137,7 @@ const EmergencyForm = () => {
         (snapshot) => {
           setUploading(true);
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          console.log('Upload is ' + progress + '% done');
+          setUploadProgress(progress);
         },
         (error) => {
           setSnackbarMessage('Error uploading media.');
@@ -182,7 +188,7 @@ const EmergencyForm = () => {
 
         <TextField label="Name" variant="outlined" fullWidth value={name} onChange={handleNameChange} margin="normal" sx={{ mb: 2 }} />
         <TextField label="Address" variant="outlined" fullWidth value={address} onChange={handleAddressChange} margin="normal" autoComplete="off" sx={{ mb: 2 }} />
-
+        
         {addressSuggestions.length > 0 && (
           <Box sx={{ position: 'absolute', zIndex: 1000, backgroundColor: 'white', border: '1px solid #ccc', width: '100%', maxWidth: '600px', maxHeight: '200px', overflowY: 'auto' }}>
             {addressSuggestions.map((suggestion, index) => (
@@ -200,7 +206,7 @@ const EmergencyForm = () => {
 
         <Box sx={{ height: { xs: '200px', md: '400px' }, mb: 2, borderRadius: '8px', overflow: 'hidden' }}>
           <MapContainer center={[location.lat, location.lng]} zoom={13} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }} ref={mapRef}>
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' />
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap contributors' />
             <Marker position={[location.lat, location.lng]} icon={markerIcon} />
           </MapContainer>
         </Box>
@@ -217,15 +223,28 @@ const EmergencyForm = () => {
 
         <TextField label="Enter your Emergency" multiline rows={4} variant="outlined" fullWidth value={emergencyText} onChange={handleEmergencyChange} margin="normal" sx={{ mb: 2 }} />
 
-        <div>
-          <input type="file" accept="image/*,video/*" onChange={handleFileChange} />
-        </div>
+        <Box>
+          <Button variant="contained" component="label">
+            Upload Media
+            <input type="file" hidden accept="image/*,video/*" onChange={handleFileChange} />
+          </Button>
+        </Box>
 
-        {/* Image Preview Before Submit */}
+        {uploading && (
+          <Box sx={{ width: '100%', mt: 2 }}>
+            <LinearProgress variant="determinate" value={uploadProgress} />
+            <Typography variant="body2" sx={{ mt: 1 }}>{Math.round(uploadProgress)}%</Typography>
+          </Box>
+        )}
+
         {previewUrl && (
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="body1">Image Preview:</Typography>
-            <img src={previewUrl} alt="Selected file preview" style={{ maxWidth: '400px', marginTop: '10px' }} />
+          <Box sx={{ mt: 2, border: '1px solid #ccc', borderRadius: '4px', padding: 2, textAlign: 'center' }}>
+            <Typography variant="body1">Media Preview:</Typography>
+            {file.type.startsWith('image/') ? (
+              <img src={previewUrl} alt="Selected file preview" style={{ maxWidth: '100%', marginTop: '10px', borderRadius: '4px' }} />
+            ) : (
+              <video src={previewUrl} controls style={{ maxWidth: '100%', marginTop: '10px', borderRadius: '4px' }} />
+            )}
           </Box>
         )}
 

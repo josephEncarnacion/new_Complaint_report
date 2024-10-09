@@ -9,6 +9,7 @@ import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
+import LinearProgress from '@mui/material/LinearProgress'; // Progress bar
 import axios from 'axios';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
@@ -30,10 +31,11 @@ const ComplaintForm = () => {
   const mapRef = useRef();
   const apiKey = 'pk.0fa1d8fd6faab9f422d6c5e37c514ce1'; // Your LocationIQ API key
   const [file, setFile] = useState(null); 
-  const [, setFileUrl] = useState(''); 
+  const [fileUrl, setFileUrl] = useState(''); 
   const [previewUrl, setPreviewUrl] = useState(''); 
-  const [, setFileName] = useState(''); 
-  const [, setUploading] = useState(false); 
+  const [fileName, setFileName] = useState(''); 
+  const [uploading, setUploading] = useState(false); 
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Handle file selection and create a preview URL for images
   const handleFileChange = (e) => {
@@ -42,11 +44,11 @@ const ComplaintForm = () => {
     setFileName(selectedFile ? selectedFile.name : '');
 
     // Create a local preview URL if it's an image
-    if (selectedFile && (selectedFile.type.startsWith('image/'))) {
+    if (selectedFile && (selectedFile.type.startsWith('image/') || selectedFile.type.startsWith('video/'))) {
       const preview = URL.createObjectURL(selectedFile);
-      setPreviewUrl(preview); // Set local image preview
+      setPreviewUrl(preview); // Set local image or video preview
     } else {
-      setPreviewUrl(''); // Reset if not an image
+      setPreviewUrl(''); // Reset if not an image or video
     }
   };
 
@@ -141,12 +143,13 @@ const ComplaintForm = () => {
       const storageRef = ref(storage, `media/${file.name}`);
       const uploadTask = uploadBytesResumable(storageRef, file);
 
+     
       uploadTask.on(
         'state_changed',
         (snapshot) => {
           setUploading(true);
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          console.log('Upload is ' + progress + '% done');
+          setUploadProgress(progress);
         },
         (error) => {
           setSnackbarMessage('Error uploading media.');
@@ -331,22 +334,34 @@ const ComplaintForm = () => {
           sx={{ mb: 2 }}
         />
 
+<       Box>
+          <Button variant="contained" component="label">
+            Upload Media
+            <input type="file" hidden accept="image/*,video/*" onChange={handleFileChange} />
+          </Button>
+        </Box>
         
-        <div>
-          <input type="file" accept="image/*,video/*" onChange={handleFileChange} />
-        </div>
-
-        {/* Image Preview Before Submit */}
-        {previewUrl && (
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="body1">Image Preview:</Typography>
-            <img src={previewUrl} alt="Selected file preview" style={{ maxWidth: '400px', marginTop: '10px' }} />
+        {uploading && (
+          <Box sx={{ width: '100%', mt: 2 }}>
+            <LinearProgress variant="determinate" value={uploadProgress} />
+            <Typography variant="body2" sx={{ mt: 1 }}>{Math.round(uploadProgress)}%</Typography>
           </Box>
         )}
 
-        <Button variant="contained" color="primary" onClick={handleSubmit}>
-          Submit
-        </Button>
+        {previewUrl && (
+          <Box sx={{ mt: 2, border: '1px solid #ccc', borderRadius: '4px', padding: 2, textAlign: 'center' }}>
+            <Typography variant="body1">Media Preview:</Typography>
+            {file.type.startsWith('image/') ? (
+              <img src={previewUrl} alt="Selected file preview" style={{ maxWidth: '100%', marginTop: '10px', borderRadius: '4px' }} />
+            ) : (
+              <video src={previewUrl} controls style={{ maxWidth: '100%', marginTop: '10px', borderRadius: '4px' }} />
+            )}
+          </Box>
+        )}
+
+        <Box marginTop={2}>
+          <Button variant="contained" color="primary" onClick={handleSubmit}>Submit Complaint </Button>
+        </Box>
       </Box>
       <Snackbar
         open={snackbarOpen}
