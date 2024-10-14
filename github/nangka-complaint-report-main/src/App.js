@@ -21,44 +21,42 @@ const App = () => {
 };
 
 // Separate the routes logic to handle loading from AuthContext
-const AppRoutes = () => {
-  const { loading } = useAuth();  // Get the loading state from AuthContext
+const routesConfig = [
+  { path: "/login", element: <Login /> },
+  { path: "/register", element: <Register /> },
+  { path: "/admin", element: <AdminPage />, protected: true, role: 'Admin' },
+  { path: "/response", element: <ResponseTeam />, protected: true, role: 'Response' },
+  { path: "/", element: <Home />, protected: true },
+  { path: "/ComplaintReport", element: <ComplaintReport />, protected: true },
+  { path: "/EmergencyReport", element: <EmergencyReport />, protected: true },
+];
 
-  if (loading) {
-    // Display a loading spinner or message while the auth state is loading
-    return <div>Loading...</div>;
-  }
+const AppRoutes = () => {
+  const { loading } = useAuth();
+  if (loading) return <div>Loading...</div>;
 
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/admin" element={
-          <RoleProtectedRoute allowedRoles={['Admin']}>
-            <AdminPage />
-          </RoleProtectedRoute>
-        } />
-        <Route path="/response" element={
-          <RoleProtectedRoute allowedRoles={['Response']}>
-            <ResponseTeam />
-          </RoleProtectedRoute>
-        } />
-        <Route
-          path="*"
-          element={
-            <ProtectedRoute>
-              <Routes>
-                <Route exact path="/" element={<Home />} />
-                <Route path="ComplaintReport" element={<ComplaintReport />} />
-                <Route path="EmergencyReport" element={<EmergencyReport />} />
-              </Routes>
-            </ProtectedRoute>
-          }
-        />
+        {routesConfig.map(({ path, element, protected: isProtected, role }) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              isProtected ? (
+                role ? (
+                  <RoleProtectedRoute allowedRoles={[role]}>{element}</RoleProtectedRoute>
+                ) : (
+                  <ProtectedRoute>{element}</ProtectedRoute>
+                )
+              ) : (
+                element
+              )
+            }
+          />
+        ))}
       </Routes>
     </Router>
   );
 };
-
 export default App;
