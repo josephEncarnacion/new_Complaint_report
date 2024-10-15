@@ -31,9 +31,9 @@ const ComplaintForm = () => {
   const mapRef = useRef();
   const apiKey = 'pk.0fa1d8fd6faab9f422d6c5e37c514ce1'; // Your LocationIQ API key
   const [file, setFile] = useState(null); 
-  const [fileUrl, setFileUrl] = useState(''); 
+  const [ setFileUrl] = useState(''); 
   const [previewUrl, setPreviewUrl] = useState(''); 
-  const [fileName, setFileName] = useState(''); 
+  const [ setFileName] = useState(''); 
   const [uploading, setUploading] = useState(false); 
   const [uploadProgress, setUploadProgress] = useState(0);
 
