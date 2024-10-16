@@ -31,9 +31,9 @@ const EmergencyForm = () => {
   const mapRef = useRef();
   const apiKey = 'pk.0fa1d8fd6faab9f422d6c5e37c514ce1'; 
   const [file, setFile] = useState(null); 
-  const [ setFileUrl] = useState(''); 
+  const [ ,setFileUrl] = useState(''); 
   const [previewUrl, setPreviewUrl] = useState(''); 
-  const [ setFileName] = useState(''); 
+  const [, setFileName] = useState(''); 
   const [uploading, setUploading] = useState(false); 
   const [uploadProgress, setUploadProgress] = useState(0);
 
