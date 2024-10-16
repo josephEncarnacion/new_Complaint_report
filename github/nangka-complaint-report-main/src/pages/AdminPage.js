@@ -52,10 +52,7 @@ const AdminPage = () => {
       const result = await response.json();
       if (result.success) {
         fetchComplaints(complaintPage, complaintRowsPerPage);
-        const socket = new WebSocket('ws://localhost:8080');
-        socket.onopen = () => {
-          socket.send(`Complaint ${name} has been Rejected`);
-        };
+        
       } else {
         alert('Failed to delete complaint');
       }
@@ -68,10 +65,7 @@ const AdminPage = () => {
       const result = await response.json();
       if (result.success) {
         fetchComplaints(complaintPage, complaintRowsPerPage);
-        const socket = new WebSocket('ws://localhost:8080');
-        socket.onopen = () => {
-          socket.send(`Complaint ${name} has been confirmed`);
-        };
+       
       } else {
         alert('Failed to confirm complaint');
       }
@@ -84,10 +78,7 @@ const AdminPage = () => {
       const result = await response.json();
       if (result.success) {
         fetchEmergencies(emergencyPage, emergencyRowsPerPage);
-        const socket = new WebSocket('ws://localhost:8080');
-        socket.onopen = () => {
-          socket.send(`Emergency Report ${name} has been deleted`);
-        };
+       
       } else {
         alert('Failed to delete emergency');
       }
@@ -100,10 +91,7 @@ const AdminPage = () => {
       const result = await response.json();
       if (result.success) {
         fetchEmergencies(emergencyPage, emergencyRowsPerPage);
-        const socket = new WebSocket('ws://localhost:8080');
-        socket.onopen = () => {
-          socket.send(`Emergency Report ${name} has been confirmed`);
-        };
+       
       } else {
         alert('Failed to confirm emergency');
       }
