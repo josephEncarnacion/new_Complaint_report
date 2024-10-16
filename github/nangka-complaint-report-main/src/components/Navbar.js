@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AppBar, Toolbar, Typography, Button, IconButton, Drawer, List, ListItem, ListItemText, Badge, Menu, MenuItem, useMediaQuery } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
@@ -13,39 +13,7 @@ function Navbar() {
   const [anchorEl, setAnchorEl] = useState(null);
   const isFullScreen = useMediaQuery('(max-width:600px)');
   const { isAuthenticated, logout } = useAuth();
-  const [ws, setWs] = useState(null); // WebSocket state
 
-  useEffect(() => {
-    // Connect to WebSocket server
-    const socket = new WebSocket('ws://localhost:8080');
-
-    socket.onopen = () => {
-      console.log('Connected to WebSocket server');
-    };
-
-    socket.onmessage = (event) => {
-      const message = event.data;
-
-      // Add new notification
-      setNotifications((prevNotifications) => [
-        ...prevNotifications,
-        { id: prevNotifications.length + 1, message },
-      ]);
-    };
-
-    socket.onclose = () => {
-      console.log('Disconnected from WebSocket server');
-    };
-
-    setWs(socket);
-
-    // Cleanup on component unmount
-    return () => {
-      if (ws) {
-        ws.close();
-      }
-    };
-  }, []);
 
   const handleDrawerOpen = () => {
     setOpenDrawer(true);

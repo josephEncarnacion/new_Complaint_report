@@ -7,6 +7,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // Use extended to parse nested objects
 app.use(cors());
+const path = require('path');
 
 const { getConfirmedComplaints, getConfirmedEmergencies } = require('./dbfiles/dbOperation');
 
