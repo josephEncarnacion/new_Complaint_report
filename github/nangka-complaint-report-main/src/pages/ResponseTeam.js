@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import io from 'socket.io-client';  // Import Socket.IO client
 import axios from 'axios';
 import { Button, Container, Box, AppBar, Toolbar, Typography, IconButton } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -31,26 +32,54 @@ const defaultMarkerIcon = L.icon({
   shadowSize: [41, 41],
 });
 
+const socket = io('http://localhost:5000');  // Connect to WebSocket server
+
 const ResponseTeam = () => {
-  const [currentPosition, setCurrentPosition] = useState(null);
+  const [currentPosition, setCurrentPosition] = useState(null);  // Initialize as null
   const [confirmedReports, setConfirmedReports] = useState([]);
   const [route, setRoute] = useState([]);
   const { logout } = useAuth();
 
+  // Get the actual geolocation of the response team and send it to the server
   useEffect(() => {
-    // Get current position
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setCurrentPosition([latitude, longitude]);
-      },
-      (error) => {
-        console.error(error);
-      },
-      { enableHighAccuracy: true }
+    const updatePosition = (position) => {
+      const { latitude, longitude } = position.coords;
+      setCurrentPosition([latitude, longitude]);
+
+      console.log('Latitude:', latitude);
+    console.log('Longitude:', longitude);
+
+      // Send the updated position to the server
+      socket.emit('sendPosition', { latitude, longitude });
+    };
+
+    // Listen for geolocation changes
+    const geoWatchId = navigator.geolocation.watchPosition(
+      updatePosition,  // Success callback
+      (error) => console.error('Error getting geolocation:', error),  // Error callback
+      { enableHighAccuracy: true }  // Options: high accuracy for better results
     );
 
-    // Fetch confirmed reports from the API
+    // Cleanup geolocation watcher on component unmount
+    return () => {
+      navigator.geolocation.clearWatch(geoWatchId);
+      socket.off('sendPosition');
+    };
+  }, []);
+
+  // Listen for real-time updates from the server and update the map
+  useEffect(() => {
+    socket.on('positionUpdate', (newPosition) => {
+      setCurrentPosition([newPosition.latitude, newPosition.longitude]);  // Update the marker's position
+    });
+
+    return () => {
+      socket.off('positionUpdate');  // Cleanup WebSocket connection on component unmount
+    };
+  }, []);
+
+  // Fetch confirmed reports from the API
+  useEffect(() => {
     const fetchConfirmedReports = async () => {
       try {
         const response = await axios.get('/api/confirmedReports');
@@ -101,7 +130,6 @@ const ResponseTeam = () => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Response Team Dashboard
           </Typography>
-          {/* Logout Button */}
           <Button
             color="inherit"
             startIcon={<LogoutIcon />}
@@ -131,13 +159,12 @@ const ResponseTeam = () => {
                     <strong>Name:</strong> {report.Name} <br />
                     <strong>Address:</strong> {report.Address} <br />
                     <strong>Report:</strong> {report.EmergencyType || report.ComplaintType} <br />
-                    
                     {/* Display the media (image or video) */}
                     {report.MediaUrl ? (
                       report.MediaUrl.endsWith('.jpg') || report.MediaUrl.endsWith('.jpeg') || report.MediaUrl.endsWith('.png') ? (
                         <img src={report.MediaUrl} alt="Emergency Media" style={{ maxWidth: '100px' }} />
                       ) : (
-                        <a href={report.MediaUrl} target="_blank" rel="noopener noreferrer">View Meida</a>
+                        <a href={report.MediaUrl} target="_blank" rel="noopener noreferrer">View Media</a>
                       )
                     ) : (
                       'No media attached'

@@ -1,16 +1,52 @@
 const express = require('express');
 const dbOperation = require('./dbfiles/dbOperation');
 const cors = require('cors');
-const { getPaginatedComplaints, getPaginatedEmergencies } = require('./dbfiles/dbOperation');
+const http = require('http');
+const { Server } = require('socket.io');
+const path = require('path');  // Move path import to the top
+
+
 const API_PORT = process.env.PORT || 5000;
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*',  // Allow all origins (you can restrict this for security)
+  },
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // Use extended to parse nested objects
 app.use(cors());
-const path = require('path');
 
 const { getConfirmedComplaints, getConfirmedEmergencies } = require('./dbfiles/dbOperation');
+const { getPaginatedComplaints, getPaginatedEmergencies } = require('./dbfiles/dbOperation');
 
+
+let responseTeamPosition = {
+  latitude: 51.505,  // Initial value
+  longitude: -0.09,  // Initial value
+};
+
+// WebSocket connection handler
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+
+  // Send the current position to the connected client
+  socket.emit('positionUpdate', responseTeamPosition);
+  console.log('positionUpdate' + responseTeamPosition);
+
+  // Listen for position updates from the client
+  socket.on('sendPosition', (newPosition) => {
+    responseTeamPosition = newPosition;  // Update server-side position
+    io.emit('positionUpdate', responseTeamPosition);  // Broadcast updated position to all clients
+    console.log('Broadcasting updated position:', responseTeamPosition);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
 
 app.get('/api/confirmedReports', async (req, res) => {
     try {
@@ -100,10 +136,6 @@ app.get('/login', (req, res) => {
     }
 });
 
-// The "catchall" handler: for any request that doesn't match one above, send back React's index.html file.
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client/build/index.html'));
-});
 
 app.post('/register', async (req, res) => {
   const { username, firstName, lastName, password } = req.body;
