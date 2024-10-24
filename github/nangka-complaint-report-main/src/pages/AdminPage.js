@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Button, TableContainer, TableHead, AppBar, Toolbar, IconButton, Typography, Box, Drawer, List, ListItem, ListItemIcon, ListItemText, CssBaseline, Divider, Container, Table, TableBody, TableCell, TableRow, Paper, TablePagination
+  Button,TablePagination, TableContainer, TableHead, AppBar, Toolbar, IconButton, Typography, Box, Drawer, List, ListItem, ListItemIcon, ListItemText, CssBaseline, Divider, Container, Table, TableBody, TableCell, TableRow, Paper, 
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -9,7 +9,20 @@ import ReportIcon from '@mui/icons-material/Report';
 import CustomPaginationActions from '../components/CustomPaginationActions';
 import MapComponent from '../components/MapComponent';
 import { useAuth } from '../contexts/AuthContext'; 
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import axios from 'axios';
 
+const defaultMarkerIcon = L.icon({
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  shadowSize: [41, 41],
+});
+
+const POLLING_INTERVAL = 10000; // 10 seconds
 const drawerWidth = 240;
 
 const AdminPage = () => {
@@ -21,7 +34,34 @@ const AdminPage = () => {
   const [complaintRowsPerPage, setComplaintRowsPerPage] = useState(10);
   const [emergencyPage, setEmergencyPage] = useState(0);
   const [emergencyRowsPerPage, setEmergencyRowsPerPage] = useState(10);
+  const [responseTeamLocations, setResponseTeamLocations] = useState([]);
+
+  const fetchResponseTeamLocations = async () => {
+    try {
+      const response = await axios.get('/api/responseTeamLocations');
+      if (response.data.success) {
+        setResponseTeamLocations(response.data.locations); // Use 'locations' from the API response
+      } else {
+        console.error('Failed to fetch locations');
+      }
+    } catch (error) {
+      console.error('Error fetching response team locations:', error);
+    }
+  };
   
+  useEffect(() => {
+    // Initial fetch
+    fetchResponseTeamLocations();
+  
+    // Polling every 10 seconds
+    const intervalId = setInterval(fetchResponseTeamLocations, POLLING_INTERVAL);
+  
+    return () => clearInterval(intervalId);
+  }, []);
+  
+
+
+
   useEffect(() => {
     if (selectedSection === 'complaints') {
       fetchComplaints(complaintPage, complaintRowsPerPage);
@@ -124,6 +164,25 @@ const AdminPage = () => {
     switch (selectedSection) {
       case 'map':
         return <MapComponent />;
+        case'monitoring':
+        return (
+          <Container sx={{ mt: 4 }}>
+          <div>
+            <h2>Admin Monitoring</h2>
+            <MapContainer center={[0, 0]} zoom={2} style={{ height: '600px', width: '100%' }}>
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              {responseTeamLocations.map((location, index) => (
+                <Marker key={index} position={[location.latitude, location.longitude]} icon={defaultMarkerIcon}>
+                  <Popup>
+                    <strong>Response Team</strong> <br />
+                    Last Updated: {new Date(location.timestamp).toLocaleString()}
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          </div>
+        </Container>
+        );
       case 'complaints':
         return (
           <Container sx={{ mt: 4 }}>

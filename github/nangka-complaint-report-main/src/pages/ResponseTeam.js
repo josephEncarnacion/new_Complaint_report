@@ -1,23 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import io from 'socket.io-client';  // Import Socket.IO client
 import axios from 'axios';
 import { Button, Container, Box, AppBar, Toolbar, Typography, IconButton } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import LogoutIcon from '@mui/icons-material/Logout';
 import polyline from '@mapbox/polyline';
-import { useAuth } from '../contexts/AuthContext'; // Use the useAuth hook
+import { useAuth } from '../contexts/AuthContext';
 
-// Create a custom icon for the vehicle
 const vehicleIcon = L.divIcon({
   className: 'custom-div-icon',
-  html: `<div style=" border-radius: 50%; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5H16V4C16 2.9 15.1 2 14 2H10C8.9 2 8 2.9 8 4V5H6.5C5.84 5 5.28 5.42 5.08 6.01L3 12V21C3 21.55 3.45 22 4 22H5C5.55 22 6 21.55 6 21V20H18V21C18 21.55 18.45 22 19 22H20C20.55 22 21 21.55 21 21V12L18.92 6.01ZM10 4H14V5H10V4ZM6.85 7H17.14L18.22 10H5.78L6.85 7ZM19 18C18.45 18 18 17.55 18 17C18 16.45 18.45 16 19 16C19.55 16 20 16.45 20 17C20 17.55 19.55 18 19 18ZM5 18C4.45 18 4 17.55 4 17C4 16.45 4.45 16 5 16C5.55 16 6 16.45 6 17C6 17.55 5.55 18 5 18ZM5 14V12H19V14H5Z" fill="black"/>
-          </svg>
-        </div>`,
+  html: `<div style="border-radius: 50%; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">
+           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+             <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5H16V4C16 2.9 15.1 2 14 2H10C8.9 2 8 2.9 8 4V5H6.5C5.84 5 5.28 5.42 5.08 6.01L3 12V21C3 21.55 3.45 22 4 22H5C5.55 22 6 21.55 6 21V20H18V21C18 21.55 18.45 22 19 22H20C20.55 22 21 21.55 21 21V12L18.92 6.01ZM10 4H14V5H10V4ZM6.85 7H17.14L18.22 10H5.78L6.85 7ZM19 18C18.45 18 18 17.55 18 17C18 16.45 18.45 16 19 16C19.55 16 20 16.45 20 17C20 17.55 19.55 18 19 18ZM5 18C4.45 18 4 17.55 4 17C4 16.45 4.45 16 5 16C5.55 16 6 16.45 6 17C6 17.55 5.55 18 5 18ZM5 14V12H19V14H5Z" fill="black"/>
+           </svg>
+         </div>`,
   iconSize: [32, 32],
   iconAnchor: [16, 16]
 });
@@ -32,86 +30,72 @@ const defaultMarkerIcon = L.icon({
   shadowSize: [41, 41],
 });
 
-const socket = io('http://localhost:5000');  // Connect to WebSocket server
+const POLLING_INTERVAL = 10000; // 10 seconds
 
 const ResponseTeam = () => {
-  const [currentPosition, setCurrentPosition] = useState(null);  // Initialize as null
+  const [currentPosition, setCurrentPosition] = useState(null);
   const [confirmedReports, setConfirmedReports] = useState([]);
   const [route, setRoute] = useState([]);
   const { logout } = useAuth();
 
-  // Get the actual geolocation of the response team and send it to the server
-  useEffect(() => {
-    const updatePosition = (position) => {
+  const fetchLocation = async () => {
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true });
+      });
       const { latitude, longitude } = position.coords;
       setCurrentPosition([latitude, longitude]);
+  
+      // Send location to the server with a unique teamId (e.g., team1)
+      await axios.post('/api/updateLocation', { latitude, longitude, teamId: 'team1' });
+  
+      console.log('Position:', latitude, longitude);
+    } catch (error) {
+      console.error('Error fetching location:', error);
+    }
+  };
 
-      console.log('Latitude:', latitude);
-    console.log('Longitude:', longitude);
+  const fetchReports = async () => {
+    try {
+      const reportResponse = await axios.get('/api/confirmedReports');
+      setConfirmedReports([
+        ...reportResponse.data.complaints,
+        ...reportResponse.data.emergencies,
+      ]);
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+    }
+  };
 
-      // Send the updated position to the server
-      socket.emit('sendPosition', { latitude, longitude });
-    };
-
-    // Listen for geolocation changes
-    const geoWatchId = navigator.geolocation.watchPosition(
-      updatePosition,  // Success callback
-      (error) => console.error('Error getting geolocation:', error),  // Error callback
-      { enableHighAccuracy: true }  // Options: high accuracy for better results
-    );
-
-    // Cleanup geolocation watcher on component unmount
-    return () => {
-      navigator.geolocation.clearWatch(geoWatchId);
-      socket.off('sendPosition');
-    };
+  const fetchLocationAndReports = useCallback(async () => {
+    await fetchLocation();
+    await fetchReports();
   }, []);
 
-  // Listen for real-time updates from the server and update the map
   useEffect(() => {
-    socket.on('positionUpdate', (newPosition) => {
-      setCurrentPosition([newPosition.latitude, newPosition.longitude]);  // Update the marker's position
-    });
+    // Initial fetch
+    fetchLocationAndReports();
 
-    return () => {
-      socket.off('positionUpdate');  // Cleanup WebSocket connection on component unmount
-    };
-  }, []);
+    // Polling at regular intervals
+    const intervalId = setInterval(fetchLocationAndReports, POLLING_INTERVAL);
 
-  // Fetch confirmed reports from the API
-  useEffect(() => {
-    const fetchConfirmedReports = async () => {
-      try {
-        const response = await axios.get('/api/confirmedReports');
-        const reports = [
-          ...response.data.complaints,
-          ...response.data.emergencies
-        ];
-        setConfirmedReports(reports);
-      } catch (error) {
-        console.error('Error fetching confirmed reports:', error);
-      }
-    };
-
-    fetchConfirmedReports();
-  }, []);
+    return () => clearInterval(intervalId);
+  }, [fetchLocationAndReports]);
 
   const getDirections = async (reportLocation) => {
     if (!currentPosition) return;
 
     const [currentLat, currentLng] = currentPosition;
     const [reportLat, reportLng] = reportLocation;
-
     const apiKey = 'pk.0fa1d8fd6faab9f422d6c5e37c514ce1';
     const profile = 'driving';
     const url = `https://us1.locationiq.com/v1/directions/${profile}/${currentLng},${currentLat};${reportLng},${reportLat}?key=${apiKey}&steps=true&alternatives=true&geometries=polyline&overview=full`;
 
     try {
       const response = await axios.get(url);
-      if (response.data && response.data.routes && response.data.routes.length > 0) {
-        const routeData = response.data.routes[0];
-        const coordinates = polyline.decode(routeData.geometry);
-        const leafletCoordinates = coordinates.map(coord => [coord[0], coord[1]]);
+      if (response.data.routes && response.data.routes.length > 0) {
+        const coordinates = polyline.decode(response.data.routes[0].geometry);
+        const leafletCoordinates = coordinates.map(([lat, lng]) => [lat, lng]);
         setRoute(leafletCoordinates);
       }
     } catch (error) {
@@ -121,20 +105,15 @@ const ResponseTeam = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5' }}>
-      {/* Responsive Navbar */}
       <AppBar position="static">
         <Toolbar>
           <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }}>
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
             Response Team Dashboard
           </Typography>
-          <Button
-            color="inherit"
-            startIcon={<LogoutIcon />}
-            onClick={logout}
-          >
+          <Button color="inherit" startIcon={<LogoutIcon />} onClick={logout}>
             Logout
           </Button>
         </Toolbar>
@@ -145,7 +124,6 @@ const ResponseTeam = () => {
           Monitor Response Team
         </Typography>
 
-        {/* Responsive Map */}
         {currentPosition && (
           <Box sx={{ height: { xs: '400px', md: '600px' }, width: '100%', mb: 4 }}>
             <MapContainer center={currentPosition} zoom={13} style={{ height: '100%', width: '100%' }}>
@@ -159,15 +137,12 @@ const ResponseTeam = () => {
                     <strong>Name:</strong> {report.Name} <br />
                     <strong>Address:</strong> {report.Address} <br />
                     <strong>Report:</strong> {report.EmergencyType || report.ComplaintType} <br />
-                    {/* Display the media (image or video) */}
-                    {report.MediaUrl ? (
-                      report.MediaUrl.endsWith('.jpg') || report.MediaUrl.endsWith('.jpeg') || report.MediaUrl.endsWith('.png') ? (
-                        <img src={report.MediaUrl} alt="Emergency Media" style={{ maxWidth: '100px' }} />
+                    {report.MediaUrl && (
+                      report.MediaUrl.endsWith('.jpg') || report.MediaUrl.endsWith('.png') ? (
+                        <img src={report.MediaUrl} alt="Media" style={{ maxWidth: '100px' }} />
                       ) : (
                         <a href={report.MediaUrl} target="_blank" rel="noopener noreferrer">View Media</a>
                       )
-                    ) : (
-                      'No media attached'
                     )}
                     <br />
                     <Button variant="contained" onClick={() => getDirections([report.Latitude, report.Longitude])}>

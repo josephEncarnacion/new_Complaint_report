@@ -1,53 +1,41 @@
 const express = require('express');
 const dbOperation = require('./dbfiles/dbOperation');
 const cors = require('cors');
-const http = require('http');
-const { Server } = require('socket.io');
-const path = require('path');  // Move path import to the top
-
-
-const API_PORT = process.env.PORT || 5000;
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: '*',  // Allow all origins (you can restrict this for security)
-  },
-});
+const API_PORT = process.env.PORT || 5000;
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // Use extended to parse nested objects
 app.use(cors());
 
-const { getConfirmedComplaints, getConfirmedEmergencies } = require('./dbfiles/dbOperation');
-const { getPaginatedComplaints, getPaginatedEmergencies } = require('./dbfiles/dbOperation');
+const responseTeamLocations = {};
 
+// API to update the response team's location
+app.post('/api/updateLocation', (req, res) => {
+  const { latitude, longitude, teamId } = req.body; // Include teamId to track each response team
 
-let responseTeamPosition = {
-  latitude: 51.505,  // Initial value
-  longitude: -0.09,  // Initial value
-};
+  if (typeof latitude !== 'number' || typeof longitude !== 'number') {
+    return res.status(400).json({ success: false, message: 'Invalid latitude or longitude' });
+  }
 
-// WebSocket connection handler
-io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
+  const timestamp = new Date();
 
-  // Send the current position to the connected client
-  socket.emit('positionUpdate', responseTeamPosition);
-  console.log('positionUpdate' + responseTeamPosition);
+  // Update the location by teamId (only one location per team)
+  responseTeamLocations[teamId] = { latitude, longitude, timestamp };
 
-  // Listen for position updates from the client
-  socket.on('sendPosition', (newPosition) => {
-    responseTeamPosition = newPosition;  // Update server-side position
-    io.emit('positionUpdate', responseTeamPosition);  // Broadcast updated position to all clients
-    console.log('Broadcasting updated position:', responseTeamPosition);
-  });
-
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
-  });
+  res.json({ success: true, message: 'Location updated', timestamp });
 });
 
+// API to get all response team locations
+app.get('/api/responseTeamLocations', (req, res) => {
+  const locations = Object.values(responseTeamLocations);
+  return res.json({ success: true, locations });
+});
+
+
+const { getConfirmedComplaints, getConfirmedEmergencies } = require('./dbfiles/dbOperation');
+const { getPaginatedComplaints, getPaginatedEmergencies } = require('./dbfiles/dbOperation');
 app.get('/api/confirmedReports', async (req, res) => {
     try {
         const confirmedComplaints = await getConfirmedComplaints();
