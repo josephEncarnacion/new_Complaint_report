@@ -22,6 +22,19 @@ const defaultMarkerIcon = L.icon({
   shadowSize: [41, 41],
 });
 
+
+const vehicleIcon = L.divIcon({
+  className: 'custom-div-icon',
+  html: `<div style="border-radius: 50%; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">
+           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+             <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5H16V4C16 2.9 15.1 2 14 2H10C8.9 2 8 2.9 8 4V5H6.5C5.84 5 5.28 5.42 5.08 6.01L3 12V21C3 21.55 3.45 22 4 22H5C5.55 22 6 21.55 6 21V20H18V21C18 21.55 18.45 22 19 22H20C20.55 22 21 21.55 21 21V12L18.92 6.01ZM10 4H14V5H10V4ZM6.85 7H17.14L18.22 10H5.78L6.85 7ZM19 18C18.45 18 18 17.55 18 17C18 16.45 18.45 16 19 16C19.55 16 20 16.45 20 17C20 17.55 19.55 18 19 18ZM5 18C4.45 18 4 17.55 4 17C4 16.45 4.45 16 5 16C5.55 16 6 16.45 6 17C6 17.55 5.55 18 5 18ZM5 14V12H19V14H5Z" fill="black"/>
+           </svg>
+         </div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16]
+});
+
+
 const POLLING_INTERVAL = 10000; // 10 seconds
 const drawerWidth = 240;
 
@@ -35,6 +48,8 @@ const AdminPage = () => {
   const [emergencyPage, setEmergencyPage] = useState(0);
   const [emergencyRowsPerPage, setEmergencyRowsPerPage] = useState(10);
   const [responseTeamLocations, setResponseTeamLocations] = useState([]);
+  const [confirmedReports, setConfirmedReports] = useState([]); // New state for confirmed reports
+
 
   const fetchResponseTeamLocations = async () => {
     try {
@@ -48,11 +63,21 @@ const AdminPage = () => {
       console.error('Error fetching response team locations:', error);
     }
   };
+  const fetchConfirmedReports = async () => {
+    try {
+      const response = await axios.get('/api/confirmedReports');
+      setComplaints(response.data.complaints || []);
+      setEmergencies(response.data.emergencies || []);
+      setConfirmedReports([...response.data.complaints, ...response.data.emergencies]);
+    } catch (error) {
+      console.error('Error fetching confirmed reports:', error);
+    }
+  };
   
   useEffect(() => {
     // Initial fetch
     fetchResponseTeamLocations();
-  
+    fetchConfirmedReports();
     // Polling every 10 seconds
     const intervalId = setInterval(fetchResponseTeamLocations, POLLING_INTERVAL);
   
@@ -169,13 +194,29 @@ const AdminPage = () => {
           <Container sx={{ mt: 4 }}>
           <div>
             <h2>Admin Monitoring</h2>
-            <MapContainer center={[0, 0]} zoom={2} style={{ height: '600px', width: '100%' }}>
+            <MapContainer center={[14.6507, 121.1029]} zoom={13} style={{ height: '600px', width: '100%' }}>
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
               {responseTeamLocations.map((location, index) => (
-                <Marker key={index} position={[location.latitude, location.longitude]} icon={defaultMarkerIcon}>
+                <Marker key={index} position={[location.latitude, location.longitude]} icon={vehicleIcon}>
                   <Popup>
                     <strong>Response Team</strong> <br />
                     Last Updated: {new Date(location.timestamp).toLocaleString()}
+                  </Popup>
+                </Marker>
+              ))}
+            {confirmedReports.map((report, index) => (
+                <Marker key={index} position={[report.Latitude, report.Longitude]} icon={defaultMarkerIcon}>
+                  <Popup>
+                    <strong>Name:</strong> {report.Name} <br />
+                    <strong>Address:</strong> {report.Address} <br />
+                    <strong>Report:</strong> {report.EmergencyType || report.ComplaintType} <br />
+                    {report.MediaUrl && (
+                      report.MediaUrl.endsWith('.jpg') || report.MediaUrl.endsWith('.png') ? (
+                        <img src={report.MediaUrl} alt="Media" style={{ maxWidth: '100px' }} />
+                      ) : (
+                        <a href={report.MediaUrl} target="_blank" rel="noopener noreferrer">View Media</a>
+                      )
+                    )}
                   </Popup>
                 </Marker>
               ))}
