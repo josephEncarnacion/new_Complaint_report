@@ -1,7 +1,6 @@
 // src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Home from './pages/Home';
 import UserReport from './pages/UserReport'; 
 import Login from './pages/login';
 import Register from './pages/register';
@@ -19,15 +18,13 @@ const App = () => {
   );
 };
 
-// Separate the routes logic to handle loading from AuthContext
 const routesConfig = [
   { path: "/login", element: <Login /> },
   { path: "/register", element: <Register /> },
   { path: "/admin", element: <AdminPage />, protected: true, role: 'Admin' },
   { path: "/response", element: <ResponseTeam />, protected: true, role: 'Response' },
-  { path: "/", element: <Home />, protected: true },
-  { path: "/user-report", element: <UserReport />, protected: true }, 
-
+  { path: "/", element: <UserReport />, protected: true },  // Set UserReport as the new home page
+  { path: "/user-report", element: <UserReport />, protected: true },
 ];
 
 const AppRoutes = () => {
@@ -58,4 +55,5 @@ const AppRoutes = () => {
     </Router>
   );
 };
+
 export default App;

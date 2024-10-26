@@ -39,17 +39,14 @@ function Navbar() {
       <AppBar position="static" sx={{ backgroundColor: '#1976d2', padding: '0 20px' }}>
         <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {/* Persistent Hamburger Menu for All Screen Sizes */}
             <IconButton edge="start" color="inherit" aria-label="menu" onClick={handleDrawerOpen} sx={{ mr: 1 }}>
               <MenuIcon />
             </IconButton>
-            {/* App Title Visible on All Screen Sizes */}
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
               Report Application
             </Typography>
           </Box>
 
-          {/* Navbar buttons for larger screens */}
           {!isSmallScreen && (
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Button color="inherit" component={Link} to="/" sx={{ mx: 1 }}>
@@ -94,7 +91,6 @@ function Navbar() {
         </Toolbar>
       </AppBar>
 
-      {/* Drawer for small screens */}
       <Drawer anchor="left" open={openDrawer} onClose={handleDrawerClose}>
         <Box sx={{ width: 250 }} role="presentation">
           <List>
