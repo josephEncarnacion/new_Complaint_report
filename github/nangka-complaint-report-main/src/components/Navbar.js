@@ -1,72 +1,70 @@
+// src/components/Navbar.js
 import React, { useState } from 'react';
-import { AppBar, Toolbar, Typography, Button, IconButton, Drawer, List, ListItem, ListItemText, Badge, Menu, MenuItem, useMediaQuery } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, IconButton, Drawer, List, ListItem, ListItemIcon, ListItemText, Badge, Menu, MenuItem, Box, Divider, useMediaQuery } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
-import ReportIcon from '@mui/icons-material/Report';
+import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import NotificationsIcon from '@mui/icons-material/Notifications';
-import { Link } from 'react-router-dom';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 function Navbar() {
   const [openDrawer, setOpenDrawer] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
-  const isFullScreen = useMediaQuery('(max-width:600px)');
+  const isSmallScreen = useMediaQuery('(max-width:600px)');
   const { isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
 
+  const handleDrawerOpen = () => setOpenDrawer(true);
+  const handleDrawerClose = () => setOpenDrawer(false);
+  const handleLogout = () => logout();
 
-  const handleDrawerOpen = () => {
-    setOpenDrawer(true);
-  };
-
-  const handleDrawerClose = () => {
-    setOpenDrawer(false);
-  };
-
-  const handleLogout = () => {
-    logout();
-  };
-
-  const handleNotificationClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleNotificationClose = () => {
-    setAnchorEl(null);
-  };
-
+  const handleNotificationClick = (event) => setAnchorEl(event.currentTarget);
+  const handleNotificationClose = () => setAnchorEl(null);
   const handleClearNotifications = () => {
-    setNotifications([]); // Clear all notifications when needed
+    setNotifications([]);
     handleNotificationClose();
+  };
+
+  const handleReportNavigation = (type) => {
+    navigate(`/user-report?type=${type}`);
+    handleDrawerClose();
   };
 
   return (
     <React.Fragment>
-      <AppBar position="static">
-        <Toolbar>
-          {!openDrawer && (
-            <IconButton size="large" edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }} onClick={handleDrawerOpen}>
+      <AppBar position="static" sx={{ backgroundColor: '#1976d2', padding: '0 20px' }}>
+        <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {/* Persistent Hamburger Menu for All Screen Sizes */}
+            <IconButton edge="start" color="inherit" aria-label="menu" onClick={handleDrawerOpen} sx={{ mr: 1 }}>
               <MenuIcon />
             </IconButton>
-          )}
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Report Application
-          </Typography>
-          {!isFullScreen && (
-            <>
-              <Button color="inherit" component={Link} to="/">
-                <HomeIcon sx={{ mr: 1 }} />
+            {/* App Title Visible on All Screen Sizes */}
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+              Report Application
+            </Typography>
+          </Box>
+
+          {/* Navbar buttons for larger screens */}
+          {!isSmallScreen && (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Button color="inherit" component={Link} to="/" sx={{ mx: 1 }}>
+                <HomeIcon sx={{ mr: 0.5 }} />
                 Home
               </Button>
-              <Button color="inherit" component={Link} to="/ComplaintReport">
-                <ReportIcon sx={{ mr: 1 }} />
-                Complaint Report
+              <Button color="inherit" onClick={() => handleReportNavigation('complaint')} sx={{ mx: 1 }}>
+                <ReportProblemIcon sx={{ mr: 0.5 }} />
+                Complaint
               </Button>
-              <Button color="inherit" component={Link} to="/EmergencyReport">
-                <ReportIcon sx={{ mr: 1 }} />
-                Emergency Report
+              <Button color="inherit" onClick={() => handleReportNavigation('emergency')} sx={{ mx: 1 }}>
+                <LocalHospitalIcon sx={{ mr: 0.5 }} />
+                Emergency
               </Button>
-              <IconButton color="inherit" onClick={handleNotificationClick}>
+              <IconButton color="inherit" onClick={handleNotificationClick} sx={{ mx: 1 }}>
                 <Badge badgeContent={notifications.length} color="secondary">
                   <NotificationsIcon />
                 </Badge>
@@ -86,35 +84,60 @@ function Navbar() {
                 <MenuItem onClick={handleClearNotifications}>Clear all</MenuItem>
               </Menu>
               {isAuthenticated && (
-                <Button color="inherit" onClick={handleLogout}>
+                <Button color="inherit" onClick={handleLogout} sx={{ ml: 2 }}>
+                  <LogoutIcon sx={{ mr: 0.5 }} />
                   Logout
                 </Button>
               )}
-            </>
+            </Box>
           )}
         </Toolbar>
       </AppBar>
-      <Drawer
-        anchor="left"
-        open={openDrawer}
-        onClose={handleDrawerClose}
-      >
-        <List>
-          <ListItem button component={Link} to="/" onClick={handleDrawerClose}>
-            <ListItemText primary="Home" />
-          </ListItem>
-          <ListItem button component={Link} to="/ComplaintReport" onClick={handleDrawerClose}>
-            <ListItemText primary="Complaint Report" />
-          </ListItem>
-          <ListItem button component={Link} to="/EmergencyReport" onClick={handleDrawerClose}>
-            <ListItemText primary="Emergency Report" />
-          </ListItem>
-          {isAuthenticated && (
-            <ListItem button onClick={handleLogout}>
-              <ListItemText primary="Logout" />
+
+      {/* Drawer for small screens */}
+      <Drawer anchor="left" open={openDrawer} onClose={handleDrawerClose}>
+        <Box sx={{ width: 250 }} role="presentation">
+          <List>
+            <ListItem button component={Link} to="/" onClick={handleDrawerClose}>
+              <ListItemIcon>
+                <HomeIcon />
+              </ListItemIcon>
+              <ListItemText primary="Home" />
             </ListItem>
-          )}
-        </List>
+            <Divider />
+            <ListItem button onClick={() => handleReportNavigation('complaint')}>
+              <ListItemIcon>
+                <ReportProblemIcon />
+              </ListItemIcon>
+              <ListItemText primary="Complaint Report" />
+            </ListItem>
+            <ListItem button onClick={() => handleReportNavigation('emergency')}>
+              <ListItemIcon>
+                <LocalHospitalIcon />
+              </ListItemIcon>
+              <ListItemText primary="Emergency Report" />
+            </ListItem>
+            <Divider />
+            <ListItem button onClick={handleNotificationClick}>
+              <ListItemIcon>
+                <NotificationsIcon />
+              </ListItemIcon>
+              <ListItemText primary="Notifications" />
+              <Badge badgeContent={notifications.length} color="secondary" />
+            </ListItem>
+            {isAuthenticated && (
+              <>
+                <Divider />
+                <ListItem button onClick={() => { handleLogout(); handleDrawerClose(); }}>
+                  <ListItemIcon>
+                    <LogoutIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Logout" />
+                </ListItem>
+              </>
+            )}
+          </List>
+        </Box>
       </Drawer>
     </React.Fragment>
   );

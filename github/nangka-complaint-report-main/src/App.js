@@ -2,8 +2,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
-import ComplaintReport from './pages/ComplaintReport';
-import EmergencyReport from './pages/EmergencyReport';
+import UserReport from './pages/UserReport'; 
 import Login from './pages/login';
 import Register from './pages/register';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -27,8 +26,8 @@ const routesConfig = [
   { path: "/admin", element: <AdminPage />, protected: true, role: 'Admin' },
   { path: "/response", element: <ResponseTeam />, protected: true, role: 'Response' },
   { path: "/", element: <Home />, protected: true },
-  { path: "/ComplaintReport", element: <ComplaintReport />, protected: true },
-  { path: "/EmergencyReport", element: <EmergencyReport />, protected: true },
+  { path: "/user-report", element: <UserReport />, protected: true }, 
+
 ];
 
 const AppRoutes = () => {
