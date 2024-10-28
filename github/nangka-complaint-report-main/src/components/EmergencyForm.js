@@ -157,7 +157,9 @@ const EmergencyForm = () => {
           const mediaUrl = await getDownloadURL(uploadTask.snapshot.ref);
           setFileUrl(mediaUrl); // Set the uploaded media URL
           setUploading(false);
-
+          const authData = JSON.parse(localStorage.getItem('authData'));
+          const userId = authData.id; // Retrieve user ID from localStorage
+          console.log(authData.id)
           // Submit form data with media URL
           const formData = {
             name,
@@ -166,6 +168,7 @@ const EmergencyForm = () => {
             emergencyText,
             location,
             mediaUrl, // Include the media URL
+            userId 
           };
 
           const response = await fetch('/submitEmergencyReport', {

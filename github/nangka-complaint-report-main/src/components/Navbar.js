@@ -1,5 +1,5 @@
 // src/components/Navbar.js
-import React, { useState } from 'react';
+import React, { useState, useEffect} from 'react';
 import { AppBar, Toolbar, Typography, Button, IconButton, Drawer, List, ListItem, ListItemIcon, ListItemText, Badge, Menu, MenuItem, Box, Divider, useMediaQuery } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
@@ -33,6 +33,22 @@ function Navbar() {
     navigate(`/user-report?type=${type}`);
     handleDrawerClose();
   };
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+        const authData = JSON.parse(localStorage.getItem('authData'));
+        if (authData && authData.id) {
+            try {
+                const response = await fetch(`/api/notifications/${authData.id}`);
+                const data = await response.json();
+                setNotifications(data.notifications);
+            } catch (error) {
+                console.error('Error fetching notifications:', error);
+            }
+        }
+    };
+    fetchNotifications();
+}, []);
 
   return (
     <React.Fragment>

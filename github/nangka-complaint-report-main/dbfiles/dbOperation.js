@@ -2,12 +2,12 @@ const config = require('./dbConfig');
 const sql = require('mssql');
 
 
-const insertComplaint = async (name, address, complaintType, complaintText, latitude, longitude, mediaUrl) => {
+const insertComplaint = async (name, address, complaintType, complaintText, latitude, longitude, mediaUrl, userId) => {
     try {
         let pool = await sql.connect(config);
         const query = `
-            INSERT INTO Complaint_tbl (Name, Address, ComplaintType, ComplaintText, Latitude, Longitude, MediaUrl)
-            VALUES (@name, @address, @complaintType, @complaintText, @latitude, @longitude, @mediaUrl)
+            INSERT INTO Complaint_tbl (Name, Address, ComplaintType, ComplaintText, Latitude, Longitude, MediaUrl, user_id)
+            VALUES (@name, @address, @complaintType, @complaintText, @latitude, @longitude, @mediaUrl, @userId)
         `;
         await pool.request()
             .input('name', sql.VarChar, name)
@@ -17,6 +17,8 @@ const insertComplaint = async (name, address, complaintType, complaintText, lati
             .input('latitude', sql.Float, latitude)
             .input('longitude', sql.Float, longitude)
             .input('mediaUrl', sql.VarChar, mediaUrl) // Store the media URL
+            .input('userId', sql.Int, userId) // Store the user ID
+
             .query(query);
         console.log('Complaint inserted successfully.');
     } catch (error) {
@@ -24,12 +26,13 @@ const insertComplaint = async (name, address, complaintType, complaintText, lati
         throw error;
     }
 };
-const insertEmergencyReport = async (name, address, emergencyType, emergencyText, latitude, longitude, mediaUrl) => {
+
+const insertEmergencyReport = async (name, address, emergencyType, emergencyText, latitude, longitude, mediaUrl, userId) => {
     try {
         let pool = await sql.connect(config);
         const query = `
-            INSERT INTO Emergency_tbl (Name, Address, EmergencyType, EmergencyText, Latitude, Longitude, MediaUrl)
-            VALUES (@name, @address, @emergencyType, @emergencyText, @latitude, @longitude, @mediaUrl)
+            INSERT INTO Emergency_tbl (Name, Address, EmergencyType, EmergencyText, Latitude, Longitude, MediaUrl, user_id)
+            VALUES (@name, @address, @emergencyType, @emergencyText, @latitude, @longitude, @mediaUrl, @userId)
         `;
         await pool.request()
             .input('name', sql.VarChar, name)
@@ -38,14 +41,16 @@ const insertEmergencyReport = async (name, address, emergencyType, emergencyText
             .input('emergencyText', sql.VarChar, emergencyText)
             .input('latitude', sql.Float, latitude)
             .input('longitude', sql.Float, longitude)
-            .input('mediaUrl', sql.VarChar, mediaUrl) // Store the media URL
+            .input('mediaUrl', sql.VarChar, mediaUrl)
+            .input('userId', sql.Int, userId) // Store the user ID
             .query(query);
         console.log('Emergency report inserted successfully.');
     } catch (error) {
         console.error('Error inserting emergency report:', error);
         throw error;
     }
-  };
+};
+
   
 async function getUserByUsername(username) {
     try {
@@ -160,6 +165,7 @@ const confirmComplaintByName = async (name) => {
             const complaint = complaintResult.recordset[0];
 
             const mediaUrl = complaint.MediaURL || null;
+            const userId = complaint.user_id;
 
             // Insert the complaint into ConfirmedComplaint_tbl
             await pool.request()
@@ -170,10 +176,11 @@ const confirmComplaintByName = async (name) => {
                 .input('latitude', sql.Float, complaint.Latitude)
                 .input('longitude', sql.Float, complaint.Longitude)
                 .input('mediaUrl', sql.VarChar, mediaUrl)
+                .input('userId', sql.Int, userId)
 
                 .query(`INSERT INTO ConfirmedComplaint_tbl 
-                        (Name, Address, ComplaintType, ComplaintText, Latitude, Longitude, MediaURL) 
-                        VALUES (@name, @address, @complaintType, @complaintText, @latitude, @longitude, @mediaUrl)`);
+                        (Name, Address, ComplaintType, ComplaintText, Latitude, Longitude, MediaURL, user_id) 
+                        VALUES (@name, @address, @complaintType, @complaintText, @latitude, @longitude, @mediaUrl, @userId)`);
 
             // Delete the complaint from Complaint_tbl
             await pool.request()
@@ -190,16 +197,15 @@ const confirmEmergencyByName = async (name) => {
     try {
         let pool = await sql.connect(config);
 
-        // Select the emergency to be confirmed
+        // Select the emergency to be confirmed along with user_id
         let emergencyResult = await pool.request()
             .input('name', sql.VarChar, name)
             .query('SELECT * FROM Emergency_tbl WHERE Name = @name');
 
         if (emergencyResult.recordset.length > 0) {
             const emergency = emergencyResult.recordset[0];
-
-            // Get MediaURL or null if undefined
-            const mediaUrl = emergency.MediaURL || null;
+            const userId = emergency.user_id;
+            const message = 'Your emergency report has been confirmed';
 
             // Insert the emergency into ConfirmedEmergency_tbl
             await pool.request()
@@ -209,12 +215,22 @@ const confirmEmergencyByName = async (name) => {
                 .input('emergencyText', sql.Text, emergency.EmergencyText)
                 .input('latitude', sql.Float, emergency.Latitude)
                 .input('longitude', sql.Float, emergency.Longitude)
-                .input('mediaUrl', sql.VarChar, mediaUrl)
+                .input('mediaUrl', sql.VarChar, emergency.MediaURL || null)
+                .input('userId', sql.Int, userId)
                 .query(`
                     INSERT INTO ConfirmedEmergency_tbl 
-                    (Name, Address, EmergencyType, EmergencyText, Latitude, Longitude, MediaURL) 
+                    (Name, Address, EmergencyType, EmergencyText, Latitude, Longitude, MediaURL, user_id) 
                     VALUES 
-                    (@name, @address, @emergencyType, @emergencyText, @latitude, @longitude, @mediaUrl)
+                    (@name, @address, @emergencyType, @emergencyText, @latitude, @longitude, @mediaUrl, @userId)
+                `);
+
+            // Add notification for the user who submitted the emergency
+            await pool.request()
+                .input('userId', sql.Int, userId)
+                .input('message', sql.VarChar, message)
+                .query(`
+                    INSERT INTO Notifications (user_id, message) 
+                    VALUES (@userId, @message)
                 `);
 
             // Delete the emergency from Emergency_tbl
@@ -256,11 +272,29 @@ const getConfirmedEmergencies = async () => {
     }
 };
 
+const getUserNotifications = async (userId) => {
+    try {
+        let pool = await sql.connect(config);
+        const result = await pool.request()
+            .input('userId', sql.Int, userId)
+            .query(`
+                SELECT id, message, is_read, created_at 
+                FROM Notifications 
+                WHERE user_id = @userId AND is_read = 0 
+                ORDER BY created_at DESC
+            `);
+        return result.recordset;
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
+        throw error;
+    }
+};
 
    
 
 module.exports = {
     insertEmergencyReport,
+    getUserNotifications,
     getPaginatedEmergencies,
     getPaginatedComplaints,
     insertComplaint,

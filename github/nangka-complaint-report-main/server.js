@@ -77,29 +77,30 @@ app.get('/emergencies', async (req, res) => {
 
 // Route to handle form submission
 app.post('/submitComplaint', async (req, res) => {
-    const { name, address, complaintType, complaintText,location, mediaUrl } = req.body;
+    const { name, address, complaintType, complaintText,location, mediaUrl, userId } = req.body;
     const { lat, lng } = location; // Extract latitude and longitude from location object
     try {
-      await dbOperation.insertComplaint(name, address, complaintType, complaintText , lat, lng, mediaUrl);
+      await dbOperation.insertComplaint(name, address, complaintType, complaintText , lat, lng, mediaUrl, userId);
       res.status(200).json({ success: true, message: 'Complaint report submitted successfully.' });
   } catch (error) {
       console.error('Error submitting Complaint report:', error);
       res.status(500).json({ success: false, message: 'Failed to submit Complaint report.' });
   }
 });
+
 app.post('/submitEmergencyReport', async (req, res) => {
-    const { name, address, emergencyType, emergencyText, location, mediaUrl } = req.body; // Add mediaUrl
-    const { lat, lng } = location;
-    try {
-        await dbOperation.insertEmergencyReport(name, address, emergencyType, emergencyText, lat, lng, mediaUrl); // Include mediaUrl
-        res.status(200).json({ success: true, message: 'Emergency report submitted successfully.' });
-    } catch (error) {
-        console.error('Error submitting emergency report:', error);
-        res.status(500).json({ success: false, message: 'Failed to submit emergency report.' });
-    }
-  });
-  
-  
+  const { name, address, emergencyType, emergencyText, location, mediaUrl, userId } = req.body; // Add userId
+  const { lat, lng } = location;
+
+  try {
+      await dbOperation.insertEmergencyReport(name, address, emergencyType, emergencyText, lat, lng, mediaUrl, userId); // Pass userId
+      res.status(200).json({ success: true, message: 'Emergency report submitted successfully.' });
+  } catch (error) {
+      console.error('Error submitting emergency report:', error);
+      res.status(500).json({ success: false, message: 'Failed to submit emergency report.' });
+  }
+});
+
 
 app.get('/login', (req, res) => {
     res.sendFile(__dirname + '/login.js');
@@ -115,10 +116,11 @@ app.get('/login', (req, res) => {
         const user = await dbOperation.getUserByUsername(username);
         if (user && user.password === password) {
             // Log first_name and last_name to the console
-            console.log(`User logged in: ${user.first_name} ${user.last_name}`);
+            console.log(`User logged in: ${user.id} ${user.first_name} ${user.last_name}`);
             
             res.status(200).json({
                 success: true,
+                id: user.id,
                 role: user.role,
                 first_name: user.first_name,
                 last_name: user.last_name,
@@ -195,5 +197,17 @@ app.post('/emergencies/confirm/:name', async (req, res) => {
       res.status(500).json({ success: false, message: 'Failed to confirm emergency.' });
   }
 });
+
+app.get('/api/notifications/:userId', async (req, res) => {
+  const { userId } = req.params;
+  try {
+      const notifications = await dbOperation.getUserNotifications(userId);
+      res.status(200).json({ notifications });
+  } catch (error) {
+      console.error('Error fetching notifications:', error);
+      res.status(500).json({ success: false, message: 'Error fetching notifications.' });
+  }
+});
+
   
 app.listen(API_PORT, () => console.log(`Server is running on port ${API_PORT}`));

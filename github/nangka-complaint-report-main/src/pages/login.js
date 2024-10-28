@@ -25,6 +25,7 @@ function Login() {
         localStorage.setItem(
           'authData',
           JSON.stringify({
+            id: data.id,
             role: data.role,
             firstName: data.first_name,
             lastName: data.last_name,
