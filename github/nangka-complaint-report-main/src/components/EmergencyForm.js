@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'; 
+import React, { useState, useRef, useEffect } from 'react'; 
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
@@ -117,6 +117,14 @@ const EmergencyForm = () => {
       }
     );
   };
+
+  useEffect(() => {
+    const authData = JSON.parse(localStorage.getItem('authData'));
+    if (authData) {
+      const fullName = `${authData.firstName} ${authData.lastName}`;
+      setName(fullName); // Set the user's full name as the initial value
+    }
+  }, []);
 
   // Handle form submission with file upload
   const handleSubmit = async () => {

@@ -50,7 +50,7 @@ const insertEmergencyReport = async (name, address, emergencyType, emergencyText
 async function getUserByUsername(username) {
     try {
         let pool = await sql.connect(config);
-        const query = 'SELECT * FROM users WHERE username = @username';
+        const query = 'SELECT id, username, password, role, first_name, last_name, name FROM users WHERE username = @username';
         const result = await pool.request()
             .input('username', sql.VarChar, username)
             .query(query);
@@ -76,6 +76,7 @@ async function insertUser(user) {
         throw error;
     }
 }
+
 const getPaginatedComplaints = async (page, pageSize) => {
     try {
         let pool = await sql.connect(config);

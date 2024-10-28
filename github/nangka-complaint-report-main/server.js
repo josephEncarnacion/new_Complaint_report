@@ -114,7 +114,16 @@ app.get('/login', (req, res) => {
     try {
         const user = await dbOperation.getUserByUsername(username);
         if (user && user.password === password) {
-            res.status(200).json({ success: true, role: user.role, message: 'Login successful.' });
+            // Log first_name and last_name to the console
+            console.log(`User logged in: ${user.first_name} ${user.last_name}`);
+            
+            res.status(200).json({
+                success: true,
+                role: user.role,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                message: 'Login successful.'
+            });
         } else {
             res.status(401).json({ success: false, message: 'Invalid credentials.' });
         }
@@ -164,6 +173,7 @@ app.delete('/emergencies/:name', async (req, res) => {
       res.status(500).json({ success: false, message: 'Failed to delete emergency.' });
   }
 });
+
 app.post('/complaints/confirm/:name', async (req, res) => {
   const { name } = req.params;
   try {
