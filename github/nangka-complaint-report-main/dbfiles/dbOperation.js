@@ -166,6 +166,8 @@ const confirmComplaintByName = async (name) => {
 
             const mediaUrl = complaint.MediaURL || null;
             const userId = complaint.user_id;
+            const message = 'Your emergency report has been confirmed';
+
 
             // Insert the complaint into ConfirmedComplaint_tbl
             await pool.request()
@@ -181,6 +183,16 @@ const confirmComplaintByName = async (name) => {
                 .query(`INSERT INTO ConfirmedComplaint_tbl 
                         (Name, Address, ComplaintType, ComplaintText, Latitude, Longitude, MediaURL, user_id) 
                         VALUES (@name, @address, @complaintType, @complaintText, @latitude, @longitude, @mediaUrl, @userId)`);
+
+                        
+             // Add notification for the user who submitted the emergency
+             await pool.request()
+             .input('userId', sql.Int, userId)
+             .input('message', sql.VarChar, message)
+             .query(`
+                 INSERT INTO Notifications (user_id, message) 
+                 VALUES (@userId, @message)
+             `);
 
             // Delete the complaint from Complaint_tbl
             await pool.request()
