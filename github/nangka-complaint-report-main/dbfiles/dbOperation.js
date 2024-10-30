@@ -194,6 +194,14 @@ const confirmComplaintByName = async (name) => {
                  VALUES (@userId, @message)
              `);
 
+             await pool.request()
+             .input('userId', sql.Int, 1005)
+             .input('message', sql.VarChar, message)
+             .query(`
+                 INSERT INTO Notifications (user_id, message) 
+                 VALUES (@userId, 'New confirmed emergency ready for dispatch')
+             `);
+
             // Delete the complaint from Complaint_tbl
             await pool.request()
                 .input('name', sql.VarChar, name)

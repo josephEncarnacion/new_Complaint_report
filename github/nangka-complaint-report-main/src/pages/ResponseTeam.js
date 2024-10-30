@@ -3,7 +3,8 @@ import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet'
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
-import { Button, Container, Box, AppBar, Toolbar, Typography, IconButton } from '@mui/material';
+import { Button, Container, Box, AppBar, Toolbar, Typography, IconButton, MenuItem, Menu, Badge } from '@mui/material';
+import NotificationsIcon from '@mui/icons-material/Notifications';
 import MenuIcon from '@mui/icons-material/Menu';
 import LogoutIcon from '@mui/icons-material/Logout';
 import polyline from '@mapbox/polyline';
@@ -36,7 +37,33 @@ const ResponseTeam = () => {
   const [currentPosition, setCurrentPosition] = useState(null);
   const [confirmedReports, setConfirmedReports] = useState([]);
   const [route, setRoute] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [anchorEl, setAnchorEl] = useState(null);
+
   const { logout } = useAuth();
+
+  const handleNotificationClick = (event) => setAnchorEl(event.currentTarget);
+  const handleNotificationClose = () => setAnchorEl(null);
+  const handleClearNotifications = () => {
+    setNotifications([]);
+    handleNotificationClose();
+  };
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+        const authData = JSON.parse(localStorage.getItem('authData'));
+        if (authData && authData.id) {
+            try {
+                const response = await fetch(`/api/notifications/${authData.id}`);
+                const data = await response.json();
+                setNotifications(data.notifications);
+            } catch (error) {
+                console.error('Error fetching notifications:', error);
+            }
+        }
+    };
+    fetchNotifications();
+}, []);
 
   const fetchLocation = async () => {
     try {
@@ -113,6 +140,25 @@ const ResponseTeam = () => {
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             Response Team Dashboard
           </Typography>
+          <IconButton color="inherit" onClick={handleNotificationClick} sx={{ mx: 1 }}>
+                <Badge badgeContent={notifications.length} color="secondary">
+                  <NotificationsIcon />
+                </Badge>
+              </IconButton>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleNotificationClose}
+              >
+                {notifications.length === 0 ? (
+                  <MenuItem>No new notifications</MenuItem>
+                ) : (
+                  notifications.map((notification) => (
+                    <MenuItem key={notification.id}>{notification.message}</MenuItem>
+                  ))
+                )}
+                <MenuItem onClick={handleClearNotifications}>Clear all</MenuItem>
+              </Menu>
           <Button color="inherit" startIcon={<LogoutIcon />} onClick={logout}>
             Logout
           </Button>
