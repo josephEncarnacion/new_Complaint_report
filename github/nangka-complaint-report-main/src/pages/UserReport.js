@@ -92,7 +92,7 @@ const UserReport = () => {
               </Typography>
             </Grid>
 
-           <Grid item xs={12} md={8} textAlign="center" sx={{  backgroundColor: 'background.default',
+           <Grid item xs={12} md={12}  sx={{  backgroundColor: 'background.default',
                   p: 3,
                   mt: 4,
                   borderTop: '1px solid',
