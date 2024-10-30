@@ -91,47 +91,44 @@ const UserReport = () => {
                 latest updates and announcements through this platform.
               </Typography>
             </Grid>
+
+           <Grid item xs={12} md={8} textAlign="center" sx={{  backgroundColor: 'background.default',
+                  p: 3,
+                  mt: 4,
+                  borderTop: '1px solid',
+                  borderColor: 'divider', }}>
+         
+                <Typography variant="h5" gutterBottom>
+                  Important Contacts
+                </Typography>
+                <Typography variant="body1" color="textSecondary" gutterBottom>
+                  If you need immediate assistance, please contact:
+                </Typography>
+                <List>
+                  <ListItem>
+                    <IconButton edge="start" aria-label="hotline">
+                      <PhoneIcon color="primary" />
+                    </IconButton>
+                    <ListItemText primary="Barangay Hotline" secondary="(+63) 123-4567" />
+                  </ListItem>
+                  <Divider />
+                  <ListItem>
+                    <IconButton edge="start" aria-label="police">
+                      <PhoneIcon color="primary" />
+                    </IconButton>
+                    <ListItemText primary="Police Station" secondary="(+63) 890-1234" />
+                  </ListItem>
+                  <Divider />
+                  <ListItem>
+                    <IconButton edge="start" aria-label="health-center">
+                      <PhoneIcon color="primary" />
+                    </IconButton>
+                    <ListItemText primary="Health Center" secondary="(+63) 567-8901" />
+                  </ListItem>
+                </List>
+           </Grid>
           </Grid>
         )}
-      </Box>
-
-      <Box
-        sx={{
-          backgroundColor: 'background.default',
-          p: 3,
-          mt: 4,
-          borderTop: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
-        <Typography variant="h5" gutterBottom>
-          Important Contacts
-        </Typography>
-        <Typography variant="body1" color="textSecondary" gutterBottom>
-          If you need immediate assistance, please contact:
-        </Typography>
-        <List>
-          <ListItem>
-            <IconButton edge="start" aria-label="hotline">
-              <PhoneIcon color="primary" />
-            </IconButton>
-            <ListItemText primary="Barangay Hotline" secondary="(+63) 123-4567" />
-          </ListItem>
-          <Divider />
-          <ListItem>
-            <IconButton edge="start" aria-label="police">
-              <PhoneIcon color="primary" />
-            </IconButton>
-            <ListItemText primary="Police Station" secondary="(+63) 890-1234" />
-          </ListItem>
-          <Divider />
-          <ListItem>
-            <IconButton edge="start" aria-label="health-center">
-              <PhoneIcon color="primary" />
-            </IconButton>
-            <ListItemText primary="Health Center" secondary="(+63) 567-8901" />
-          </ListItem>
-        </List>
       </Box>
     </Box>
   );
