@@ -1,4 +1,3 @@
-// src/pages/UserReport.js
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import {
@@ -8,7 +7,6 @@ import {
   ListItem,
   ListItemText,
   Divider,
-  useTheme,
   Grid,
   IconButton,
   Card,
@@ -25,7 +23,6 @@ const UserReport = () => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const reportType = searchParams.get('type');
-  const theme = useTheme();
 
   return (
     <Box>
@@ -37,12 +34,12 @@ const UserReport = () => {
           <EmergencyForm />
         ) : (
           <Grid container spacing={4} justifyContent="center">
-            <Grid item xs={12} md={8} textAlign="center">
+            <Grid item xs={12} md={8} textAlign="center" sx={{ mb: 4 }}>
               <Typography variant="h4" gutterBottom>
-                Welcome to Barangay Report and Complaint System
+                Welcome to the Barangay Report and Complaint System
               </Typography>
-              <Typography variant="body1" color="textSecondary" sx={{ maxWidth: 600, mx: 'auto', mt: 2 }}>
-                Your voice matters. This system helps you easily submit reports and complaints, making our barangay safer
+              <Typography variant="body1" color="textSecondary">
+                Your voice matters. This system helps you submit reports and complaints easily, making our barangay safer
                 and more responsive to your needs.
               </Typography>
             </Grid>
@@ -51,13 +48,13 @@ const UserReport = () => {
               <Typography variant="h5" gutterBottom>
                 Types of Reports You Can Submit
               </Typography>
-              <Grid container spacing={2}>
+              <Grid container spacing={3} sx={{ mt: 4 }}>
                 <Grid item xs={12} sm={6}>
-                  <Card>
+                  <Card sx={{ backgroundColor: 'background.paper', boxShadow: 3 }}>
                     <CardContent>
                       <ListItem>
                         <IconButton edge="start" aria-label="complaint">
-                          <ReportIcon />
+                          <ReportIcon color="primary" />
                         </IconButton>
                         <ListItemText
                           primary="Complaint Reports"
@@ -68,11 +65,11 @@ const UserReport = () => {
                   </Card>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Card>
+                  <Card sx={{ backgroundColor: 'background.paper', boxShadow: 3 }}>
                     <CardContent>
                       <ListItem>
                         <IconButton edge="start" aria-label="emergency">
-                          <WarningIcon />
+                          <WarningIcon color="error" />
                         </IconButton>
                         <ListItemText
                           primary="Emergency Reports"
@@ -85,7 +82,7 @@ const UserReport = () => {
               </Grid>
             </Grid>
 
-            <Grid item xs={12} md={8} textAlign="center">
+            <Grid item xs={12} md={8} textAlign="center" sx={{ mt: 4 }}>
               <Typography variant="h5" gutterBottom>
                 Get Involved
               </Typography>
@@ -100,12 +97,11 @@ const UserReport = () => {
 
       <Box
         sx={{
-          backgroundColor: theme.palette.background.default,
+          backgroundColor: 'background.default',
           p: 3,
           mt: 4,
           borderTop: '1px solid',
-          borderColor: theme.palette.divider,
-          bottom: 0,
+          borderColor: 'divider',
         }}
       >
         <Typography variant="h5" gutterBottom>
@@ -117,21 +113,21 @@ const UserReport = () => {
         <List>
           <ListItem>
             <IconButton edge="start" aria-label="hotline">
-              <PhoneIcon />
+              <PhoneIcon color="primary" />
             </IconButton>
             <ListItemText primary="Barangay Hotline" secondary="(+63) 123-4567" />
           </ListItem>
           <Divider />
           <ListItem>
             <IconButton edge="start" aria-label="police">
-              <PhoneIcon />
+              <PhoneIcon color="primary" />
             </IconButton>
             <ListItemText primary="Police Station" secondary="(+63) 890-1234" />
           </ListItem>
           <Divider />
           <ListItem>
             <IconButton edge="start" aria-label="health-center">
-              <PhoneIcon />
+              <PhoneIcon color="primary" />
             </IconButton>
             <ListItemText primary="Health Center" secondary="(+63) 567-8901" />
           </ListItem>

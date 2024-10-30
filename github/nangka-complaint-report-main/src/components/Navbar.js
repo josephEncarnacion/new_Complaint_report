@@ -1,6 +1,9 @@
 // src/components/Navbar.js
-import React, { useState, useEffect} from 'react';
-import { AppBar, Toolbar, Typography, Button, IconButton, Drawer, List, ListItem, ListItemIcon, ListItemText, Badge, Menu, MenuItem, Box, Divider, useMediaQuery } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import {
+  AppBar, Toolbar, Typography, Button, IconButton, Drawer, List, ListItem, ListItemIcon,
+  ListItemText, Badge, Menu, MenuItem, Box, Avatar, Divider, useMediaQuery
+} from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
@@ -14,13 +17,22 @@ function Navbar() {
   const [openDrawer, setOpenDrawer] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [avatarMenuAnchor, setAvatarMenuAnchor] = useState(null); // for avatar dropdown
   const isSmallScreen = useMediaQuery('(max-width:600px)');
   const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
 
+  const authData = JSON.parse(localStorage.getItem('authData'));
+  const userInitials = authData 
+    ? `${authData.firstName[0] || ''}${authData.lastName[0] || ''}`.toUpperCase()
+    : '';
+
   const handleDrawerOpen = () => setOpenDrawer(true);
   const handleDrawerClose = () => setOpenDrawer(false);
-  const handleLogout = () => logout();
+  const handleLogout = () => {
+    logout();
+    setAvatarMenuAnchor(null); // Close the dropdown after logout
+  };
 
   const handleNotificationClick = (event) => setAnchorEl(event.currentTarget);
   const handleNotificationClose = () => setAnchorEl(null);
@@ -34,21 +46,23 @@ function Navbar() {
     handleDrawerClose();
   };
 
+  const handleAvatarClick = (event) => setAvatarMenuAnchor(event.currentTarget);
+  const handleAvatarMenuClose = () => setAvatarMenuAnchor(null);
+
   useEffect(() => {
     const fetchNotifications = async () => {
-        const authData = JSON.parse(localStorage.getItem('authData'));
-        if (authData && authData.id) {
-            try {
-                const response = await fetch(`/api/notifications/${authData.id}`);
-                const data = await response.json();
-                setNotifications(data.notifications);
-            } catch (error) {
-                console.error('Error fetching notifications:', error);
-            }
+      if (authData && authData.id) {
+        try {
+          const response = await fetch(`/api/notifications/${authData.id}`);
+          const data = await response.json();
+          setNotifications(data.notifications);
+        } catch (error) {
+          console.error('Error fetching notifications:', error);
         }
+      }
     };
     fetchNotifications();
-}, []);
+  }, [authData]);
 
   return (
     <React.Fragment>
@@ -97,10 +111,32 @@ function Navbar() {
                 <MenuItem onClick={handleClearNotifications}>Clear all</MenuItem>
               </Menu>
               {isAuthenticated && (
-                <Button color="inherit" onClick={handleLogout} sx={{ ml: 2 }}>
-                  <LogoutIcon sx={{ mr: 0.5 }} />
-                  Logout
-                </Button>
+                <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+                  <Avatar
+                    sx={{ bgcolor: 'secondary.main', cursor: 'pointer' }}
+                    onClick={handleAvatarClick} // Open dropdown on avatar click
+                  >
+                    {userInitials}
+                  </Avatar>
+                  <Menu
+                    anchorEl={avatarMenuAnchor}
+                    open={Boolean(avatarMenuAnchor)}
+                    onClose={handleAvatarMenuClose}
+                    anchorOrigin={{
+                      vertical: 'bottom',
+                      horizontal: 'right',
+                    }}
+                    transformOrigin={{
+                      vertical: 'top',
+                      horizontal: 'right',
+                    }}
+                  >
+                    <MenuItem onClick={handleLogout}>
+                      <LogoutIcon sx={{ mr: 1 }} />
+                      Logout
+                    </MenuItem>
+                  </Menu>
+                </Box>
               )}
             </Box>
           )}
@@ -137,17 +173,12 @@ function Navbar() {
               <ListItemText primary="Notifications" />
               <Badge badgeContent={notifications.length} color="secondary" />
             </ListItem>
-            {isAuthenticated && (
-              <>
-                <Divider />
-                <ListItem button onClick={() => { handleLogout(); handleDrawerClose(); }}>
-                  <ListItemIcon>
-                    <LogoutIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Logout" />
-                </ListItem>
-              </>
-            )}
+            <ListItem onClick={handleLogout}>
+               <ListItemIcon>
+                 <LogoutIcon />
+               </ListItemIcon>
+               <ListItemText primary="Logout" />
+            </ListItem>
           </List>
         </Box>
       </Drawer>
