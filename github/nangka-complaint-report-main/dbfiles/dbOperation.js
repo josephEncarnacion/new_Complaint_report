@@ -199,7 +199,7 @@ const confirmComplaintByName = async (name) => {
              .input('message', sql.VarChar, message)
              .query(`
                  INSERT INTO Notifications (user_id, message) 
-                 VALUES (@userId, 'New confirmed emergency ready for dispatch')
+                 VALUES (@userId, 'New Comfirmed complaint ready for dispatch')
              `);
 
             // Delete the complaint from Complaint_tbl
@@ -251,6 +251,14 @@ const confirmEmergencyByName = async (name) => {
                 .query(`
                     INSERT INTO Notifications (user_id, message) 
                     VALUES (@userId, @message)
+                `);
+
+             await pool.request()
+                .input('userId', sql.Int, 1005)
+                .input('message', sql.VarChar, message)
+                .query(`
+                    INSERT INTO Notifications (user_id, message) 
+                    VALUES (@userId, 'New confirmed emergency ready for dispatch')
                 `);
 
             // Delete the emergency from Emergency_tbl

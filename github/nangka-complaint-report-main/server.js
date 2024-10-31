@@ -3,6 +3,7 @@ const dbOperation = require('./dbfiles/dbOperation');
 const cors = require('cors');
 const app = express();
 const API_PORT = process.env.PORT || 5000;
+const bcrypt = require('bcrypt'); // Import bcrypt
 
 
 app.use(express.json());
@@ -10,6 +11,7 @@ app.use(express.urlencoded({ extended: true })); // Use extended to parse nested
 app.use(cors());
 
 const responseTeamLocations = {};
+const SALT_ROUNDS = 10; // Define the number of salt rounds for bcrypt hashing
 
 // API to update the response team's location
 app.post('/api/updateLocation', (req, res) => {
@@ -112,28 +114,29 @@ app.get('/login', (req, res) => {
   
   app.post('/login', async (req, res) => {
     const { username, password } = req.body;
+  
     try {
-        const user = await dbOperation.getUserByUsername(username);
-        if (user && user.password === password) {
-            // Log first_name and last_name to the console
-            console.log(`User logged in: ${user.id} ${user.first_name} ${user.last_name}`);
-            
-            res.status(200).json({
-                success: true,
-                id: user.id,
-                role: user.role,
-                first_name: user.first_name,
-                last_name: user.last_name,
-                message: 'Login successful.'
-            });
-        } else {
-            res.status(401).json({ success: false, message: 'Invalid credentials.' });
-        }
+      const user = await dbOperation.getUserByUsername(username);
+  
+      if (user && await bcrypt.compare(password, user.password)) { // Compare hashed password
+        console.log(`User logged in: ${user.id} ${user.first_name} ${user.last_name}`);
+  
+        res.status(200).json({
+          success: true,
+          id: user.id,
+          role: user.role,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          message: 'Login successful.'
+        });
+      } else {
+        res.status(401).json({ success: false, message: 'Invalid credentials.' });
+      }
     } catch (error) {
-        console.error('Error logging in:', error);
-        res.status(500).json({ success: false, message: 'Error logging in.' });
+      console.error('Error logging in:', error);
+      res.status(500).json({ success: false, message: 'Error logging in.' });
     }
-});
+  });
 
 
 app.post('/register', async (req, res) => {
@@ -143,8 +146,10 @@ app.post('/register', async (req, res) => {
       if (existingUser) {
           return res.status(400).json({ success: false, message: 'Username already exists.' });
       }
-      await dbOperation.insertUser({ username, firstName, lastName, password });
-      res.status(200).json({ success: true, message: 'Registration successful.' });
+      // Hash the password before storing
+        const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+        await dbOperation.insertUser({ username, firstName, lastName, password: hashedPassword });
+        res.status(200).json({ success: true, message: 'Registration successful.' });
   } catch (error) {
       console.error('Error registering:', error);
       res.status(500).json({ success: false, message: 'Error registering.' });
