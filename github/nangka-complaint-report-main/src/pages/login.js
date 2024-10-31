@@ -1,15 +1,22 @@
 // src/pages/Login.js
-import React from 'react';
+import React,{useState} from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Grid, TextField, Button, Typography, Paper, Box } from '@mui/material';
+import { Grid, IconButton, TextField, Button, Typography, Paper, Box,InputAdornment } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 function Login() {
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
   const navigate = useNavigate();
   const { login } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+
+
+  const handleTogglePasswordVisibility = () => {
+    setShowPassword((prevShowPassword) => !prevShowPassword);
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -68,10 +75,20 @@ function Login() {
               <Grid item xs={12}>
                 <TextField
                   label="Password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   fullWidth
+                  required
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={handleTogglePasswordVisibility} edge="end">
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
                 />
               </Grid>
               <Grid item xs={12}>
