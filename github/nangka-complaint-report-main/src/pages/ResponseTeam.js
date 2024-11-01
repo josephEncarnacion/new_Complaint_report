@@ -1,3 +1,4 @@
+// src/components/ResponseTeam.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -37,6 +38,7 @@ const ResponseTeam = () => {
   const [currentPosition, setCurrentPosition] = useState(null);
   const [confirmedReports, setConfirmedReports] = useState([]);
   const [route, setRoute] = useState([]);
+  const [routeDetails, setRouteDetails] = useState({});
   const [notifications, setNotifications] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -51,19 +53,19 @@ const ResponseTeam = () => {
 
   useEffect(() => {
     const fetchNotifications = async () => {
-        const authData = JSON.parse(localStorage.getItem('authData'));
-        if (authData && authData.id) {
-            try {
-                const response = await fetch(`/api/notifications/${authData.id}`);
-                const data = await response.json();
-                setNotifications(data.notifications);
-            } catch (error) {
-                console.error('Error fetching notifications:', error);
-            }
+      const authData = JSON.parse(localStorage.getItem('authData'));
+      if (authData && authData.id) {
+        try {
+          const response = await fetch(`/api/notifications/${authData.id}`);
+          const data = await response.json();
+          setNotifications(data.notifications);
+        } catch (error) {
+          console.error('Error fetching notifications:', error);
         }
+      }
     };
     fetchNotifications();
-}, []);
+  }, []);
 
   const fetchLocation = async () => {
     try {
@@ -72,11 +74,7 @@ const ResponseTeam = () => {
       });
       const { latitude, longitude } = position.coords;
       setCurrentPosition([latitude, longitude]);
-  
-      // Send location to the server with a unique teamId (e.g., team1)
       await axios.post('/api/updateLocation', { latitude, longitude, teamId: 'team1' });
-  
-      console.log('Position:', latitude, longitude);
     } catch (error) {
       console.error('Error fetching location:', error);
     }
@@ -100,30 +98,34 @@ const ResponseTeam = () => {
   }, []);
 
   useEffect(() => {
-    // Initial fetch
     fetchLocationAndReports();
-
-    // Polling at regular intervals
     const intervalId = setInterval(fetchLocationAndReports, POLLING_INTERVAL);
-
     return () => clearInterval(intervalId);
   }, [fetchLocationAndReports]);
 
-  const getDirections = async (reportLocation) => {
+  const getDirections = async (report, index) => {
     if (!currentPosition) return;
 
     const [currentLat, currentLng] = currentPosition;
-    const [reportLat, reportLng] = reportLocation;
+    const [reportLat, reportLng] = [report.Latitude, report.Longitude];
     const apiKey = 'pk.0fa1d8fd6faab9f422d6c5e37c514ce1';
     const profile = 'driving';
-    const url = `https://us1.locationiq.com/v1/directions/${profile}/${currentLng},${currentLat};${reportLng},${reportLat}?key=${apiKey}&steps=true&alternatives=true&geometries=polyline&overview=full`;
+    const url = `https://us1.locationiq.com/v1/directions/${profile}/${currentLng},${currentLat};${reportLng},${reportLat}?key=${apiKey}&steps=true&geometries=polyline&overview=full`;
 
     try {
       const response = await axios.get(url);
       if (response.data.routes && response.data.routes.length > 0) {
-        const coordinates = polyline.decode(response.data.routes[0].geometry);
+        const routeData = response.data.routes[0];
+        const coordinates = polyline.decode(routeData.geometry);
         const leafletCoordinates = coordinates.map(([lat, lng]) => [lat, lng]);
         setRoute(leafletCoordinates);
+
+        const distance = (routeData.distance / 1000).toFixed(2); // in kilometers
+        const duration = (routeData.duration / 60).toFixed(0); // in minutes
+        setRouteDetails((prev) => ({
+          ...prev,
+          [index]: { distance, duration },
+        }));
       }
     } catch (error) {
       console.error('Error fetching directions:', error);
@@ -141,24 +143,20 @@ const ResponseTeam = () => {
             Response Team Dashboard
           </Typography>
           <IconButton color="inherit" onClick={handleNotificationClick} sx={{ mx: 1 }}>
-                <Badge badgeContent={notifications.length} color="secondary">
-                  <NotificationsIcon />
-                </Badge>
-              </IconButton>
-              <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleNotificationClose}
-              >
-                {notifications.length === 0 ? (
-                  <MenuItem>No new notifications</MenuItem>
-                ) : (
-                  notifications.map((notification) => (
-                    <MenuItem key={notification.id}>{notification.message}</MenuItem>
-                  ))
-                )}
-                <MenuItem onClick={handleClearNotifications}>Clear all</MenuItem>
-              </Menu>
+            <Badge badgeContent={notifications.length} color="secondary">
+              <NotificationsIcon />
+            </Badge>
+          </IconButton>
+          <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleNotificationClose}>
+            {notifications.length === 0 ? (
+              <MenuItem>No new notifications</MenuItem>
+            ) : (
+              notifications.map((notification) => (
+                <MenuItem key={notification.id}>{notification.message}</MenuItem>
+              ))
+            )}
+            <MenuItem onClick={handleClearNotifications}>Clear all</MenuItem>
+          </Menu>
           <Button color="inherit" startIcon={<LogoutIcon />} onClick={logout}>
             Logout
           </Button>
@@ -190,8 +188,13 @@ const ResponseTeam = () => {
                         <a href={report.MediaUrl} target="_blank" rel="noopener noreferrer">View Media</a>
                       )
                     )}
-                    <br />
-                    <Button variant="contained" onClick={() => getDirections([report.Latitude, report.Longitude])}>
+                    {routeDetails[index] && (
+                      <Box sx={{ mt: 1 }}>
+                        <Typography variant="body2">Distance: {routeDetails[index].distance} km</Typography>
+                        <Typography variant="body2">ETA: {routeDetails[index].duration} mins</Typography>
+                      </Box>
+                    )}                    <Typography> </Typography>
+                    <Button variant="contained" onClick={() => getDirections(report, index)}>
                       Get Directions
                     </Button>
                   </Popup>
