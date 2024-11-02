@@ -1,17 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
-  Button,TablePagination, TableContainer, TableHead, AppBar, Toolbar, IconButton, Typography, Box, Drawer, List, ListItem, ListItemIcon, ListItemText, CssBaseline, Divider, Container, Table, TableBody, TableCell, TableRow, Paper, 
+  Button, TablePagination, TableContainer, TableHead, AppBar, Toolbar, IconButton, Typography, Box, Drawer,
+  List, ListItem, ListItemIcon, ListItemText, CssBaseline, Container, Table, TableBody, TableCell,
+  TableRow, Paper,
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import MapIcon from '@mui/icons-material/Map';
-import ReportIcon from '@mui/icons-material/Report';
+import { Menu as MenuIcon, Dashboard as DashboardIcon, Map as MapIcon,Report as ReportIcon, Support as SupportIcon} from '@mui/icons-material';
 import CustomPaginationActions from '../components/CustomPaginationActions';
 import MapComponent from '../components/MapComponent';
-import { useAuth } from '../contexts/AuthContext'; 
+import { useAuth } from '../contexts/AuthContext';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
 import axios from 'axios';
+import L from 'leaflet';
 
 const defaultMarkerIcon = L.icon({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -21,7 +20,6 @@ const defaultMarkerIcon = L.icon({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
   shadowSize: [41, 41],
 });
-
 
 const vehicleIcon = L.divIcon({
   className: 'custom-div-icon',
@@ -34,12 +32,11 @@ const vehicleIcon = L.divIcon({
   iconAnchor: [16, 16]
 });
 
-
-const POLLING_INTERVAL = 10000; // 10 seconds
+const POLLING_INTERVAL = 10000;
 const drawerWidth = 240;
 
 const AdminPage = () => {
-  const { logout } = useAuth(); // Access logout function from AuthContext
+  const { logout } = useAuth();
   const [selectedSection, setSelectedSection] = useState('dashboard');
   const [complaints, setComplaints] = useState([]);
   const [emergencies, setEmergencies] = useState([]);
@@ -48,151 +45,87 @@ const AdminPage = () => {
   const [emergencyPage, setEmergencyPage] = useState(0);
   const [emergencyRowsPerPage, setEmergencyRowsPerPage] = useState(10);
   const [responseTeamLocations, setResponseTeamLocations] = useState([]);
-  const [confirmedReports, setConfirmedReports] = useState([]); // New state for confirmed reports
+  const [confirmedReports, setConfirmedReports] = useState([]);
 
+  const fetchData = useCallback(async () => {
+    try {
+      const [locationsRes, reportsRes] = await Promise.all([
+        axios.get('/api/responseTeamLocations'),
+        axios.get('/api/confirmedReports')
+      ]);
 
-  const fetchResponseTeamLocations = async () => {
-    try {
-      const response = await axios.get('/api/responseTeamLocations');
-      if (response.data.success) {
-        setResponseTeamLocations(response.data.locations); // Use 'locations' from the API response
-      } else {
-        console.error('Failed to fetch locations');
-      }
+      if (locationsRes.data.success) setResponseTeamLocations(locationsRes.data.locations);
+
+      const reportsData = reportsRes.data;
+      setComplaints(reportsData.complaints || []);
+      setEmergencies(reportsData.emergencies || []);
+      setConfirmedReports([...reportsData.complaints, ...reportsData.emergencies]);
     } catch (error) {
-      console.error('Error fetching response team locations:', error);
+      console.error('Error fetching data:', error);
     }
-  };
-  const fetchConfirmedReports = async () => {
-    try {
-      const response = await axios.get('/api/confirmedReports');
-      setComplaints(response.data.complaints || []);
-      setEmergencies(response.data.emergencies || []);
-      setConfirmedReports([...response.data.complaints, ...response.data.emergencies]);
-    } catch (error) {
-      console.error('Error fetching confirmed reports:', error);
-    }
-  };
-  
-  useEffect(() => {
-    // Initial fetch
-    fetchResponseTeamLocations();
-    fetchConfirmedReports();
-    // Polling every 10 seconds
-    const intervalId = setInterval(fetchResponseTeamLocations, POLLING_INTERVAL);
-  
-    return () => clearInterval(intervalId);
   }, []);
-  
-
-
 
   useEffect(() => {
-    if (selectedSection === 'complaints') {
-      fetchComplaints(complaintPage, complaintRowsPerPage);
-    }
-  }, [complaintPage, complaintRowsPerPage, selectedSection]);
+    fetchData();
+    const intervalId = setInterval(fetchData, POLLING_INTERVAL);
+    return () => clearInterval(intervalId);
+  }, [fetchData]);
 
-  useEffect(() => {
-    if (selectedSection === 'emergencies') {
-      fetchEmergencies(emergencyPage, emergencyRowsPerPage);
-    }
-  }, [emergencyPage, emergencyRowsPerPage, selectedSection]);
+  const fetchPaginatedData = useCallback(
+    async (type, page, rowsPerPage) => {
+      try {
+        const response = await axios.get(`/${type}?page=${page + 1}&pageSize=${rowsPerPage}`);
+        const data = response.data;
+        type === 'complaints' ? setComplaints(data) : setEmergencies(data);
+      } catch (error) {
+        console.error(`Error fetching ${type}:`, error);
+      }
+    },
+    []
+  );
 
-  const fetchComplaints = async (page, pageSize) => {
-    const response = await fetch(`/complaints?page=${page + 1}&pageSize=${pageSize}`);
-    const data = await response.json();
-    setComplaints(data);
-  };
-
-  const fetchEmergencies = async (page, pageSize) => {
-    const response = await fetch(`/emergencies?page=${page + 1}&pageSize=${pageSize}`);
-    const data = await response.json();
-    setEmergencies(data);
-  };
-
-  const handleDeleteComplaint = async (name) => {
-    if (window.confirm('Are you sure you want to delete this complaint?')) {
-      const response = await fetch(`/complaints/${name}`, { method: 'DELETE' });
-      const result = await response.json();
-      if (result.success) {
-        fetchComplaints(complaintPage, complaintRowsPerPage);
-        
-      } else {
-        alert('Failed to delete complaint');
+  const handleAction = async (type, name, action) => {
+    if (window.confirm(`Are you sure you want to ${action} this ${type}?`)) {
+      try {
+        const response = await axios({
+          url: `/${type}/${action}/${name}`,
+          method: action === 'delete' ? 'DELETE' : 'POST'
+        });
+        const result = response.data;
+        if (result.success) {
+          type === 'complaints'
+            ? fetchPaginatedData('complaints', complaintPage, complaintRowsPerPage)
+            : fetchPaginatedData('emergencies', emergencyPage, emergencyRowsPerPage);
+        } else {
+          alert(`Failed to ${action} ${type}`);
+        }
+      } catch (error) {
+        console.error(`Error in ${action} ${type}:`, error);
       }
     }
   };
 
-  const handleConfirmComplaint = async (name) => {
-    if (window.confirm('Are you sure you want to confirm this complaint?')) {
-      const response = await fetch(`/complaints/confirm/${name}`, { method: 'POST' });
-      const result = await response.json();
-      if (result.success) {
-        fetchComplaints(complaintPage, complaintRowsPerPage);
-       
-      } else {
-        alert('Failed to confirm complaint');
-      }
-    }
+  const renderMedia = (url) => {
+    return url ? (
+      url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.png') ? (
+        <img src={url} alt="Media" style={{ maxWidth: '100px' }} />
+      ) : (
+        <a href={url} target="_blank" rel="noopener noreferrer">View Media</a>
+      )
+    ) : (
+      'No media attached'
+    );
   };
-
-  const handleDeleteEmergency = async (name) => {
-    if (window.confirm('Are you sure you want to delete this emergency?')) {
-      const response = await fetch(`/emergencies/${name}`, { method: 'DELETE' });
-      const result = await response.json();
-      if (result.success) {
-        fetchEmergencies(emergencyPage, emergencyRowsPerPage);
-       
-      } else {
-        alert('Failed to delete emergency');
-      }
-    }
-  };
-
-  const handleConfirmEmergency = async (name) => {
-    if (window.confirm('Are you sure you want to confirm this emergency?')) {
-      const response = await fetch(`/emergencies/confirm/${name}`, { method: 'POST' });
-      const result = await response.json();
-      if (result.success) {
-        fetchEmergencies(emergencyPage, emergencyRowsPerPage);
-       
-      } else {
-        alert('Failed to confirm emergency');
-      }
-    }
-  };
-
-  const handleComplaintPageChange = (event, newPage) => {
-    setComplaintPage(newPage);
-  };
-
-  const handleComplaintRowsPerPageChange = (event) => {
-    setComplaintRowsPerPage(parseInt(event.target.value, 10));
-    setComplaintPage(0);
-  };
-
-  const handleEmergencyPageChange = (event, newPage) => {
-    setEmergencyPage(newPage);
-  };
-
-  const handleEmergencyRowsPerPageChange = (event) => {
-    setEmergencyRowsPerPage(parseInt(event.target.value, 10));
-    setEmergencyPage(0);
-  };
-
   const handleSectionChange = (section) => {
     setSelectedSection(section);
   };
-
   const renderSection = () => {
     switch (selectedSection) {
       case 'map':
         return <MapComponent />;
-        case'monitoring':
+      case 'monitoring':
         return (
           <Container sx={{ mt: 4 }}>
-          <div>
             <h2>Admin Monitoring</h2>
             <MapContainer center={[14.6507, 121.1029]} zoom={13} style={{ height: '600px', width: '100%' }}>
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -204,87 +137,31 @@ const AdminPage = () => {
                   </Popup>
                 </Marker>
               ))}
-            {confirmedReports.map((report, index) => (
+              {confirmedReports.map((report, index) => (
                 <Marker key={index} position={[report.Latitude, report.Longitude]} icon={defaultMarkerIcon}>
                   <Popup>
                     <strong>Name:</strong> {report.Name} <br />
                     <strong>Address:</strong> {report.Address} <br />
                     <strong>Report:</strong> {report.EmergencyType || report.ComplaintType} <br />
-                    {report.MediaUrl && (
-                      report.MediaUrl.endsWith('.jpg') || report.MediaUrl.endsWith('.png') ? (
-                        <img src={report.MediaUrl} alt="Media" style={{ maxWidth: '100px' }} />
-                      ) : (
-                        <a href={report.MediaUrl} target="_blank" rel="noopener noreferrer">View Media</a>
-                      )
-                    )}
+                    {renderMedia(report.MediaUrl)}
                   </Popup>
                 </Marker>
               ))}
             </MapContainer>
-          </div>
-        </Container>
-        );
-      case 'complaints':
-        return (
-          <Container sx={{ mt: 4 }}>
-            <Typography variant="h5" gutterBottom>
-              Complaints
-            </Typography>
-            <TableContainer component={Paper} sx={{ mb: 4 }}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Address</TableCell>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Description</TableCell>
-                    <TableCell>Media Upload</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {complaints.map((complaint) => (
-                    <TableRow key={complaint.Name}>
-                      <TableCell>{complaint.Name}</TableCell>
-                      <TableCell>{complaint.Address}</TableCell>
-                      <TableCell>{complaint.ComplaintType}</TableCell>
-                      <TableCell>{complaint.ComplaintText}</TableCell>
-                      <TableCell>
-                  {complaint.MediaUrl ? (
-                    complaint.MediaUrl.endsWith('.jpg') || complaint.MediaUrl.endsWith('.jpeg') || complaint.MediaUrl.endsWith('.png') ? (
-                      <img src={complaint.MediaUrl} alt="complaint Media" style={{ maxWidth: '100px' }} />
-                    ) : (
-                      <a href={complaint.MediaUrl} target="_blank" rel="noopener noreferrer">View Media Upload</a>
-                    )
-                  ) : (
-                    'No media attached'
-                  )}
-                </TableCell>
-                      <TableCell>
-                        <Button onClick={() => handleConfirmComplaint(complaint.Name)} color="primary">Dispatch</Button>
-                        <Button onClick={() => handleDeleteComplaint(complaint.Name)} color="secondary">Delete</Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            <TablePagination
-              component="div"
-              count={complaints.length}
-              page={complaintPage}
-              onPageChange={handleComplaintPageChange}
-              rowsPerPage={complaintRowsPerPage}
-              onRowsPerPageChange={handleComplaintRowsPerPageChange}
-              ActionsComponent={CustomPaginationActions}
-            />
           </Container>
         );
+      case 'complaints':
       case 'emergencies':
+        const data = selectedSection === 'complaints' ? complaints : emergencies;
+        const page = selectedSection === 'complaints' ? complaintPage : emergencyPage;
+        const rowsPerPage = selectedSection === 'complaints' ? complaintRowsPerPage : emergencyRowsPerPage;
+        const handlePageChange = selectedSection === 'complaints' ? setComplaintPage : setEmergencyPage;
+        const handleRowsPerPageChange = selectedSection === 'complaints' ? setComplaintRowsPerPage : setEmergencyRowsPerPage;
+
         return (
           <Container sx={{ mt: 4 }}>
             <Typography variant="h5" gutterBottom>
-              Emergencies
+              {selectedSection.charAt(0).toUpperCase() + selectedSection.slice(1)}
             </Typography>
             <TableContainer component={Paper}>
               <Table>
@@ -299,26 +176,16 @@ const AdminPage = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {emergencies.map((emergency) => (
-                    <TableRow key={emergency.Name}>
-                      <TableCell>{emergency.Name}</TableCell>
-                      <TableCell>{emergency.Address}</TableCell>
-                      <TableCell>{emergency.EmergencyType}</TableCell>
-                      <TableCell>{emergency.EmergencyText}</TableCell>
+                  {data.map((item) => (
+                    <TableRow key={item.Name}>
+                      <TableCell>{item.Name}</TableCell>
+                      <TableCell>{item.Address}</TableCell>
+                      <TableCell>{item.ComplaintType || item.EmergencyType}</TableCell>
+                      <TableCell>{item.ComplaintText || item.EmergencyText}</TableCell>
+                      <TableCell>{renderMedia(item.MediaUrl)}</TableCell>
                       <TableCell>
-                  {emergency.MediaUrl ? (
-                    emergency.MediaUrl.endsWith('.jpg') || emergency.MediaUrl.endsWith('.jpeg') || emergency.MediaUrl.endsWith('.png') ? (
-                      <img src={emergency.MediaUrl} alt="Emergency Media" style={{ maxWidth: '100px' }} />
-                    ) : (
-                      <a href={emergency.MediaUrl} target="_blank" rel="noopener noreferrer">View Media Upload</a>
-                    )
-                  ) : (
-                    'No media attached'
-                  )}
-                </TableCell>
-                      <TableCell>
-                        <Button onClick={() => handleConfirmEmergency(emergency.Name)} color="primary">Dispatch</Button>
-                        <Button onClick={() => handleDeleteEmergency(emergency.Name)} color="secondary">Delete</Button>
+                        <Button onClick={() => handleAction(selectedSection, item.Name, 'confirm')} color="primary">Dispatch</Button>
+                        <Button onClick={() => handleAction(selectedSection, item.Name, 'delete')} color="secondary">Delete</Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -327,16 +194,15 @@ const AdminPage = () => {
             </TableContainer>
             <TablePagination
               component="div"
-              count={emergencies.length}
-              page={emergencyPage}
-              onPageChange={handleEmergencyPageChange}
-              rowsPerPage={emergencyRowsPerPage}
-              onRowsPerPageChange={handleEmergencyRowsPerPageChange}
+              count={data.length}
+              page={page}
+              onPageChange={(event, newPage) => handlePageChange(newPage)}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={(event) => handleRowsPerPageChange(parseInt(event.target.value, 10))}
               ActionsComponent={CustomPaginationActions}
             />
           </Container>
         );
-
       default:
         return <Typography variant="h4" align="center">Welcome to the Dashboard</Typography>;
     }
@@ -347,30 +213,19 @@ const AdminPage = () => {
       <CssBaseline />
       <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
-          <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }}>
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Admin Dashboard
-          </Typography>
+          <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }}><MenuIcon /></IconButton>
+          <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>Admin Dashboard</Typography>
           <Button color="inherit" onClick={logout}>Logout</Button>
         </Toolbar>
       </AppBar>
-      
-      <Drawer
-        variant="permanent"
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box' },
-        }}
-      >
+
+      <Drawer variant="permanent" sx={{ width: drawerWidth, flexShrink: 0, '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box' } }}>
         <Toolbar />
         <Box sx={{ overflow: 'auto' }}>
-          <List>
+        <List>
             <ListItem button onClick={() => handleSectionChange('dashboard')}>
               <ListItemIcon>
-                <DashboardIcon />
+              <DashboardIcon/>
               </ListItemIcon>
               <ListItemText primary="Dashboard" />
             </ListItem>
@@ -380,7 +235,6 @@ const AdminPage = () => {
               </ListItemIcon>
               <ListItemText primary="Map" />
             </ListItem>
-            <Divider />
             <ListItem button onClick={() => handleSectionChange('complaints')}>
               <ListItemIcon>
                 <ReportIcon />
@@ -389,19 +243,20 @@ const AdminPage = () => {
             </ListItem>
             <ListItem button onClick={() => handleSectionChange('emergencies')}>
               <ListItemIcon>
-                <ReportIcon />
+            <ReportIcon/>
               </ListItemIcon>
               <ListItemText primary="Emergencies" />
             </ListItem>
             <ListItem button onClick={() => handleSectionChange('monitoring')}>
               <ListItemIcon>
-                <DashboardIcon /> {/* You can use a different icon */}
+                <SupportIcon /> {/* New icon for Monitoring */}
               </ListItemIcon>
               <ListItemText primary="Monitoring" />
             </ListItem>
           </List>
         </Box>
       </Drawer>
+
       <Box component="main" sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3 }}>
         <Toolbar />
         {renderSection()}
